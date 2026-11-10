@@ -8,13 +8,27 @@ export const appState = {
     listening: false,          // sound currently detected
     status: 'idle',            // idle | listening | transcribing | thinking | speaking | offline
     connected: false,          // WebSocket to the brain
+    authRequired: false,
+    authenticated: true,
+    authUser: null,
     currency: 'USD',
     rates: { USD: 1 },
     currencies: ['USD'],
     models: [],
     model: null,
+    role: 'jarvis',            // active agent persona
+    roles: [],
+    toolMode: 'confirm',
     stats: null,
     user: null,
+    system: null,              // VPS health snapshot
+    inbox: [],
+    unreadInbox: 0,
+    memories: [],
+    jobs: [],
+    audit: [],
+    steps: [],                 // live tool execution trace
+    approvalRequest: null,     // { id, tool, args, reason }
     tokens: 0,
     engine: null,              // last reasoning engine used: llm | rules
     sttEngine: 'browser',

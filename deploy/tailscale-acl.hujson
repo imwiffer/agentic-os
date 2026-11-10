@@ -1,0 +1,23 @@
+// Paste into https://login.tailscale.com/admin/acls/file
+// Only your devices (autogroup:owner or tag:client) may reach jarvis-vps on TCP 22 (SSH) and 443 (HTTPS via tailscale serve).
+{
+  "tagOwners": {
+    "tag:jarvis": ["autogroup:owner"],
+    "tag:client": ["autogroup:owner"]
+  },
+  "acls": [
+    {
+      "action": "accept",
+      "src": ["autogroup:owner", "tag:client"],
+      "dst": ["tag:jarvis:22,443", "autogroup:self:22,443"]
+    }
+  ],
+  "ssh": [
+    {
+      "action": "check",
+      "src": ["autogroup:owner"],
+      "dst": ["tag:jarvis", "autogroup:self"],
+      "users": ["autogroup:nonroot", "root"]
+    }
+  ]
+}

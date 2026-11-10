@@ -1,0 +1,9 @@
+# /etc/systemd/system/jarvis-backup.service
+[Unit]
+Description=Daily online backup of the Jarvis SQLite database
+
+[Service]
+Type=oneshot
+User=jarvis
+Group=jarvis
+ExecStart=/bin/bash -c 'mkdir -p /srv/jarvis/backups && sqlite3 /srv/jarvis/data/jarvis.db ".backup /srv/jarvis/backups/jarvis-$(date +%%F).db" && find /srv/jarvis/backups -name "jarvis-*.db" -mtime +7 -delete'

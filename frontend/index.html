@@ -25,12 +25,15 @@
             <div class="w-2 h-2 rounded-full bg-green-500"></div>
         </div>
         <div class="flex items-center gap-1 bg-[#1e1e1e] border border-gray-700 rounded px-2 h-5 w-full max-w-md">
-            <i class="fas fa-lock text-[8px]"></i>
-            <span class="text-gray-500 truncate" id="url-bar">localhost:8000/AgenticOS</span>
+            <i class="fas fa-lock text-[8px] text-emerald-400"></i>
+            <span class="text-gray-500 truncate" id="url-bar">tailnet/AgenticOS</span>
         </div>
-        <div class="ml-auto flex items-center gap-1.5 pr-2" title="Brain connection">
-            <span id="conn-dot" class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-            <span id="conn-label">offline</span>
+        <div class="ml-auto flex items-center gap-3 pr-2">
+            <span id="role-pill" class="px-2 py-0.5 rounded bg-purple-900/40 border border-purple-500/30 text-purple-300 font-mono">jarvis</span>
+            <div class="flex items-center gap-1.5" title="Brain connection">
+                <span id="conn-dot" class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                <span id="conn-label">offline</span>
+            </div>
         </div>
     </div>
 
@@ -42,14 +45,18 @@
                 <div class="w-6 h-6 bg-orange-500 rounded text-white flex items-center justify-center font-bold"><i class="fas fa-wind"></i></div>
                 <div>
                     <div class="font-semibold text-xs tracking-wide">Agentic OS</div>
-                    <div class="text-[9px] text-gray-500 uppercase tracking-widest">Beta Build</div>
+                    <div class="text-[9px] text-gray-500 uppercase tracking-widest">Tailscale VPS</div>
                 </div>
             </div>
 
             <div class="text-xs font-bold text-gray-500 px-2 mb-2 uppercase tracking-wider">Workspace</div>
             <nav class="flex flex-col gap-1">
                 <a href="#" class="nav-link" data-tab="Dashboard"><i class="fas fa-layer-group w-4 text-center"></i> Dashboard</a>
-                <a href="#" class="nav-link" data-tab="Inbox"><i class="fas fa-envelope w-4 text-center"></i> Inbox</a>
+                <a href="#" class="nav-link" data-tab="Inbox">
+                    <i class="fas fa-envelope w-4 text-center"></i>
+                    <span class="flex-1">Inbox</span>
+                    <span id="inbox-badge" class="hidden px-1.5 py-0.2 rounded-full text-[10px] bg-purple-600 text-white font-mono">0</span>
+                </a>
                 <a href="#" class="nav-link" data-tab="Chat"><i class="fas fa-comments w-4 text-center"></i> Chat</a>
                 <a href="#" class="nav-link" data-tab="Calendar"><i class="fas fa-calendar w-4 text-center"></i> Calendar</a>
                 <a href="#" class="nav-link" data-tab="Memory"><i class="fas fa-brain w-4 text-center"></i> Memory</a>
@@ -65,9 +72,9 @@
 
             <div class="mt-auto pt-4 border-t border-gray-800 px-2 flex items-center gap-3">
                 <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500"></div>
-                <div class="flex flex-col">
-                    <span class="text-xs font-medium" id="user-name">—</span>
-                    <span class="text-[9px] text-gray-500" id="user-title">Personal Profile</span>
+                <div class="flex flex-col min-w-0">
+                    <span class="text-xs font-medium truncate" id="user-name">—</span>
+                    <span class="text-[9px] text-gray-500 truncate" id="user-title">Personal Profile</span>
                 </div>
             </div>
         </aside>
@@ -79,7 +86,7 @@
             <!-- Header -->
             <header class="h-14 border-b border-[#222] flex items-center justify-between px-6 shrink-0 sticky top-0 z-40 bg-black/70 backdrop-blur-md">
                 <div class="flex items-center gap-2 text-sm">
-                    <span class="font-semibold text-gray-200">Agent</span>
+                    <span class="font-semibold text-gray-200" id="header-role">JARVIS</span>
                     <span class="text-gray-500">/</span>
                     <span class="bg-[#222] px-2 py-0.5 rounded text-gray-300" id="header-location">Local</span>
                     <span class="text-gray-500">/</span>
@@ -124,7 +131,7 @@
                             <div>
                                 <div class="text-lg font-medium" id="panel-model-location">Local</div>
                                 <div class="text-xs text-green-400 bg-green-900/30 px-1.5 rounded py-0.5 inline-block" id="panel-model-name">—</div>
-                                <div class="text-xs text-gray-500 mt-1" id="panel-model-host">On this machine</div>
+                                <div class="text-xs text-gray-500 mt-1" id="panel-model-host">On VPS</div>
                             </div>
                             <div class="w-12 h-12 rounded-full border border-gray-600 overflow-hidden relative">
                                 <img src="https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=200&auto=format&fit=crop" class="w-full h-full object-cover" alt="">
@@ -186,10 +193,10 @@
                             Your data: +<span id="token-counter">0</span> tokens processed
                         </div>
                         <div class="absolute bottom-4 left-4 flex gap-3">
+                            <div class="flex flex-col items-center text-[10px] text-gray-400"><i class="fas fa-shield-halved text-emerald-400"></i><span>Tailscale</span></div>
+                            <div class="flex flex-col items-center text-[10px] text-gray-400"><i class="fas fa-microchip text-sky-400"></i><span>Ollama</span></div>
                             <div class="flex flex-col items-center text-[10px] text-gray-400"><i class="fas fa-cloud text-purple-500"></i><span>OpenRouter</span></div>
-                            <div class="flex flex-col items-center text-[10px] text-gray-400"><i class="fas fa-fish text-orange-500"></i><span>Fish Audio</span></div>
-                            <div class="flex flex-col items-center text-[10px] text-gray-400"><i class="fas fa-file-code text-pink-500"></i><span>Firecrawl</span></div>
-                            <div class="flex flex-col items-center text-[10px] text-gray-400"><i class="fas fa-atom text-blue-500"></i><span>ApiFly</span></div>
+                            <div class="flex flex-col items-center text-[10px] text-gray-400"><i class="fas fa-database text-amber-400"></i><span>SQLite WAL</span></div>
                         </div>
                     </div>
                 </section>
@@ -216,12 +223,120 @@
                 </section>
             </div>
 
-            <!-- GENERIC VIEW (other sidebar sections) -->
+            <!-- INBOX VIEW -->
+            <div id="view-inbox" class="hidden p-6 space-y-4 pb-40">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-xs text-gray-500 font-bold tracking-widest uppercase">Autonomous Reports & Alerts</div>
+                        <h2 class="text-2xl text-white font-medium">Agent Inbox</h2>
+                    </div>
+                    <button id="inbox-read-all" class="glass-button px-3 py-1.5 rounded text-xs text-gray-300">
+                        <i class="fas fa-check-double mr-1"></i> Mark all read
+                    </button>
+                </div>
+                <div id="inbox-list" class="space-y-3"></div>
+            </div>
+
+            <!-- CALENDAR / SCHEDULER VIEW -->
+            <div id="view-calendar" class="hidden p-6 space-y-6 pb-40">
+                <div>
+                    <div class="text-xs text-gray-500 font-bold tracking-widest uppercase">24/7 Background Automation</div>
+                    <h2 class="text-2xl text-white font-medium">Scheduled Agent Tasks</h2>
+                </div>
+                <form id="job-form" class="glass-panel rounded-xl p-4 grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
+                    <div class="md:col-span-2">
+                        <label class="text-[10px] text-gray-400 uppercase">Task Name</label>
+                        <input id="job-name" required placeholder="Morning VPS check" class="w-full mt-1 bg-[#141417] border border-gray-700 rounded px-3 py-1.5 text-xs outline-none">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-gray-400 uppercase">Agent Role</label>
+                        <select id="job-role" class="w-full mt-1 bg-[#141417] border border-gray-700 rounded px-2 py-1.5 text-xs outline-none">
+                            <option value="jarvis">JARVIS</option>
+                            <option value="ops">Ops Engineer</option>
+                            <option value="researcher">Researcher</option>
+                            <option value="planner">Planner</option>
+                            <option value="finance">Finance Analyst</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-gray-400 uppercase">Schedule Kind</label>
+                        <select id="job-kind" class="w-full mt-1 bg-[#141417] border border-gray-700 rounded px-2 py-1.5 text-xs outline-none">
+                            <option value="daily">Daily at (HH:MM)</option>
+                            <option value="interval">Every N minutes</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-gray-400 uppercase">When</label>
+                        <input id="job-when" required value="08:00" placeholder="08:00 or 60" class="w-full mt-1 bg-[#141417] border border-gray-700 rounded px-3 py-1.5 text-xs outline-none font-mono">
+                    </div>
+                    <button class="bg-purple-600 hover:bg-purple-500 text-white rounded px-3 py-1.5 text-xs font-medium">
+                        <i class="fas fa-plus mr-1"></i> Schedule
+                    </button>
+                    <div class="md:col-span-6">
+                        <label class="text-[10px] text-gray-400 uppercase">Agent Prompt</label>
+                        <input id="job-prompt" required placeholder="Check VPS health and summarize CPU, RAM, disk and loaded models." class="w-full mt-1 bg-[#141417] border border-gray-700 rounded px-3 py-1.5 text-xs outline-none">
+                    </div>
+                </form>
+                <div id="job-list" class="space-y-2"></div>
+            </div>
+
+            <!-- MEMORY VIEW -->
+            <div id="view-memory" class="hidden p-6 space-y-6 pb-40">
+                <div class="flex items-center justify-between gap-4 flex-wrap">
+                    <div>
+                        <div class="text-xs text-gray-500 font-bold tracking-widest uppercase">Semantic + Keyword Recall</div>
+                        <h2 class="text-2xl text-white font-medium">Long-Term Memory</h2>
+                    </div>
+                    <input id="memory-search" placeholder="Search memories…" class="bg-[#141417] border border-gray-700 rounded-lg px-3 py-1.5 text-xs outline-none w-64">
+                </div>
+                <form id="memory-form" class="glass-panel rounded-xl p-4 flex flex-col md:flex-row gap-3">
+                    <input id="memory-text" required placeholder="Add a durable fact or preference…" class="flex-1 bg-[#141417] border border-gray-700 rounded px-3 py-1.5 text-xs outline-none">
+                    <input id="memory-tags" placeholder="tags (e.g. vps, preference)" class="w-48 bg-[#141417] border border-gray-700 rounded px-3 py-1.5 text-xs outline-none">
+                    <button class="bg-purple-600 hover:bg-purple-500 text-white rounded px-4 py-1.5 text-xs font-medium">Remember</button>
+                </form>
+                <div id="memory-list" class="space-y-2"></div>
+            </div>
+
+            <!-- AGENTS VIEW -->
+            <div id="view-agents" class="hidden p-6 space-y-6 pb-40">
+                <div>
+                    <div class="text-xs text-gray-500 font-bold tracking-widest uppercase">Specialist Personas & Live Tool Trace</div>
+                    <h2 class="text-2xl text-white font-medium">Multi-Agent Roster</h2>
+                </div>
+                <div id="role-cards" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+                <div class="glass-panel rounded-xl p-4">
+                    <div class="text-xs font-semibold text-gray-300 uppercase tracking-wider mb-3">Live Tool Execution Trace</div>
+                    <div id="step-trace" class="space-y-2 font-mono text-xs text-gray-400"></div>
+                </div>
+            </div>
+
+            <!-- SETTINGS / VPS HEALTH & AUDIT VIEW -->
+            <div id="view-settings" class="hidden p-6 space-y-6 pb-40">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-xs text-gray-500 font-bold tracking-widest uppercase">VPS Telemetry · Security Policy · Audit Log</div>
+                        <h2 class="text-2xl text-white font-medium">System & Security</h2>
+                    </div>
+                    <button id="refresh-settings" class="glass-button px-3 py-1.5 rounded text-xs text-gray-300">
+                        <i class="fas fa-rotate mr-1"></i> Refresh
+                    </button>
+                </div>
+                <div id="system-cards" class="grid grid-cols-1 md:grid-cols-4 gap-4"></div>
+                <div class="glass-panel rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-semibold text-gray-300 uppercase tracking-wider">Append-Only Tool Audit Log</span>
+                        <span id="tool-mode-badge" class="text-[11px] font-mono px-2 py-0.5 rounded bg-amber-900/40 text-amber-300">mode: confirm</span>
+                    </div>
+                    <div id="audit-list" class="space-y-1.5 font-mono text-[11px] max-h-96 overflow-y-auto"></div>
+                </div>
+            </div>
+
+            <!-- GENERIC VIEW (Chat / Design / Website) -->
             <div id="view-generic" class="hidden flex-1 p-6">
                 <div class="glass-panel rounded-2xl p-10 h-full min-h-[400px] flex flex-col items-center justify-center text-center gap-3">
                     <i id="generic-icon" class="fas fa-layer-group text-4xl text-purple-400"></i>
                     <h2 id="generic-title" class="text-2xl text-white font-medium">Section</h2>
-                    <p class="text-gray-400 max-w-md">This module isn't wired to an agent yet. Say <span class="text-purple-300">"open dashboard"</span> to return.</p>
+                    <p class="text-gray-400 max-w-md">Use the J.A.R.V.I.S. HUD in the bottom-right corner or press <span class="text-purple-300 font-mono">Ctrl+Space</span> to talk to any specialist agent.</p>
                 </div>
             </div>
         </main>
@@ -233,8 +348,45 @@
         <span id="thinking-text">Analyzing…</span>
     </div>
 
+    <!-- TOOL APPROVAL MODAL -->
+    <div id="approval-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="glass-panel rounded-2xl max-w-lg w-full p-6 border border-amber-500/40 space-y-4">
+            <div class="flex items-center gap-3 text-amber-400">
+                <i class="fas fa-shield-halved text-2xl"></i>
+                <div>
+                    <div class="text-xs uppercase tracking-widest text-amber-300/80">Confirmation Gate</div>
+                    <div class="text-base font-semibold text-white" id="approval-reason">Tool approval requested</div>
+                </div>
+            </div>
+            <div class="bg-black/60 border border-gray-800 rounded-lg p-3 font-mono text-xs text-gray-200 overflow-x-auto">
+                <div class="text-purple-300 mb-1" id="approval-tool">tool_name</div>
+                <pre id="approval-args" class="text-[11px] text-gray-400 whitespace-pre-wrap"></pre>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button id="approval-deny" class="glass-button px-4 py-2 rounded-lg text-xs text-red-300 border border-red-500/30">Deny</button>
+                <button id="approval-allow" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-medium">Approve & Run</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIN MODAL -->
+    <div id="login-modal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <form id="login-form" class="glass-panel rounded-2xl max-w-sm w-full p-6 border border-purple-500/30 space-y-4">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-orange-500 rounded text-white flex items-center justify-center font-bold"><i class="fas fa-lock"></i></div>
+                <div>
+                    <div class="text-sm font-semibold text-white">Agentic OS Authentication</div>
+                    <div class="text-[11px] text-gray-400">Enter your <span class="font-mono">JARVIS_AUTH_TOKEN</span></div>
+                </div>
+            </div>
+            <input id="login-token" type="password" required placeholder="Access token…" class="w-full bg-[#141417] border border-gray-700 rounded-lg px-3 py-2 text-xs outline-none font-mono">
+            <div id="login-error" class="hidden text-xs text-red-400"></div>
+            <button class="w-full bg-purple-600 hover:bg-purple-500 text-white rounded-lg py-2 text-xs font-semibold">Unlock Brain</button>
+        </form>
+    </div>
+
     <!-- JARVIS HUD -->
-    <div id="hud" class="fixed bottom-6 right-6 w-80 rounded-xl overflow-hidden shadow-2xl border border-gray-700 bg-black/85 backdrop-blur-xl z-50">
+    <div id="hud" class="fixed bottom-6 right-6 w-80 rounded-xl overflow-hidden shadow-2xl border border-gray-700 bg-black/85 backdrop-blur-xl z-40">
         <div class="flex items-center gap-3 px-3 py-3 border-b border-gray-800">
             <div class="orb" id="jarvis-orb"></div>
             <div class="flex-1 min-w-0">
@@ -246,7 +398,7 @@
         <div id="hud-body">
             <div id="hud-log" class="h-48 overflow-y-auto px-3 py-2 space-y-1.5 text-[11px] font-mono no-scrollbar"></div>
             <form id="hud-form" class="flex border-t border-gray-800">
-                <input id="hud-input" autocomplete="off" placeholder="Type a command… e.g. open finances"
+                <input id="hud-input" autocomplete="off" placeholder="Ask Jarvis… e.g. check server health"
                        class="flex-1 bg-transparent px-3 py-2 text-xs outline-none placeholder-gray-600">
                 <button class="px-3 text-purple-400 hover:text-white"><i class="fas fa-paper-plane"></i></button>
             </form>

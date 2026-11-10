@@ -55,12 +55,86 @@ CREATE TABLE IF NOT EXISTS models (
     size      TEXT,
     sort      INTEGER NOT NULL DEFAULT 0
 );
+
+-- Persistent conversation history (one conversation per dashboard client).
+CREATE TABLE IF NOT EXISTS messages (
+    id              INTEGER PRIMARY KEY,
+    conversation_id TEXT NOT NULL,
+    role            TEXT NOT NULL,       -- user | assistant
+    content         TEXT NOT NULL,
+    created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(conversation_id, id);
+
+-- Long-term memory. embedding = float32 array (BLOB) from the embedding model, NULL if unavailable.
+CREATE TABLE IF NOT EXISTS memories (
+    id         INTEGER PRIMARY KEY,
+    text       TEXT NOT NULL,
+    tags       TEXT NOT NULL DEFAULT '',
+    source     TEXT NOT NULL DEFAULT 'agent',
+    embedding  BLOB,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Scheduled agent jobs. kind: interval (value = minutes) | daily (value = HH:MM) | once (value = ISO datetime)
+CREATE TABLE IF NOT EXISTS jobs (
+    id          INTEGER PRIMARY KEY,
+    name        TEXT NOT NULL,
+    prompt      TEXT NOT NULL,
+    role        TEXT NOT NULL DEFAULT 'jarvis',
+    kind        TEXT NOT NULL,
+    value       TEXT NOT NULL,
+    next_run    TEXT,
+    last_run    TEXT,
+    last_status TEXT,
+    enabled     INTEGER NOT NULL DEFAULT 1,
+    created_at  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Results of background jobs and agent notifications.
+CREATE TABLE IF NOT EXISTS inbox (
+    id         INTEGER PRIMARY KEY,
+    title      TEXT NOT NULL,
+    body       TEXT NOT NULL,
+    source     TEXT NOT NULL DEFAULT 'agent',
+    job_id     INTEGER,
+    read       INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Append-only record of every tool call the agent attempted.
+CREATE TABLE IF NOT EXISTS audit_log (
+    id         INTEGER PRIMARY KEY,
+    ts         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    actor      TEXT NOT NULL,      -- user login / 'scheduler'
+    origin     TEXT NOT NULL,      -- ws | rest | job:<id>
+    role       TEXT NOT NULL,
+    tool       TEXT NOT NULL,
+    args       TEXT NOT NULL,
+    risk       TEXT NOT NULL,      -- safe | confirm | blocked
+    decision   TEXT NOT NULL,      -- auto | approved | denied | blocked | timeout
+    ok         INTEGER NOT NULL,
+    result     TEXT NOT NULL
+);
+CREATE TRIGGER IF NOT EXISTS audit_no_update BEFORE UPDATE ON audit_log
+BEGIN SELECT RAISE(ABORT, 'audit_log is append-only'); END;
 """
+
+SEED_MODELS = [
+    ("qwen2.5:7b-instruct", "Qwen 2.5 7B", "ollama", "local", "7B", 1),
+    ("llama3.1:8b", "Llama 3.1 8B", "ollama", "local", "8B", 2),
+    ("llama3.2:3b", "Llama 3.2 3B", "ollama", "local", "3B", 3),
+    ("qwen/qwen-2.5-72b-instruct", "Qwen 2.5 72B", "openai-compatible", "cloud", "72B", 4),
+    ("meta-llama/llama-3.1-70b-instruct", "Llama 3.1 70B", "openai-compatible", "cloud", "70B", 5),
+    ("mistralai/mistral-large", "Mistral Large", "openai-compatible", "cloud", "123B", 6),
+]
+# Too big / non-existent for a CPU VPS; removed from the registry on start-up.
+DEPRECATED_MODELS = ("qwen3.8:27b", "llama3:8b", "mistral:7b")
 
 
 @contextmanager
 def connect() -> Iterator[sqlite3.Connection]:
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=10)
     conn.row_factory = sqlite3.Row
     try:
         yield conn
@@ -72,9 +146,13 @@ def connect() -> Iterator[sqlite3.Connection]:
 def init_db() -> None:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     with connect() as c:
+        c.execute("PRAGMA journal_mode=WAL")
         c.executescript(SCHEMA)
         if c.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 0:
             _seed(c)
+        c.executemany("DELETE FROM models WHERE id = ?", [(m,) for m in DEPRECATED_MODELS])
+        c.executemany("INSERT OR IGNORE INTO models (id, name, provider, location, size, sort) VALUES (?,?,?,?,?,?)",
+                      SEED_MODELS)
 
 
 def _seed(c: sqlite3.Connection) -> None:
@@ -102,17 +180,6 @@ def _seed(c: sqlite3.Connection) -> None:
              "https://images.unsplash.com/photo-1541963463532-d68292c34b19?q=80&w=256&auto=format&fit=crop"),
             ("codex", "Codex weekly used", 9,
              "https://images.unsplash.com/photo-1614728853970-00e10288011a?q=80&w=256&auto=format&fit=crop"),
-        ],
-    )
-    c.executemany(
-        "INSERT INTO models (id, name, provider, location, size, sort) VALUES (?,?,?,?,?,?)",
-        [
-            ("qwen3.8:27b", "Qwen 3.8 27B", "ollama", "local", "27B", 1),
-            ("llama3:8b", "Llama 3 8B", "ollama", "local", "8B", 2),
-            ("mistral:7b", "Mistral 7B", "ollama", "local", "7B", 3),
-            ("meta-llama/llama-3.1-70b-instruct", "Llama 3.1 70B", "openai-compatible", "cloud", "70B", 4),
-            ("qwen/qwen-2.5-72b-instruct", "Qwen 2.5 72B", "openai-compatible", "cloud", "72B", 5),
-            ("mistralai/mistral-large", "Mistral Large", "openai-compatible", "cloud", "123B", 6),
         ],
     )
 
@@ -194,3 +261,110 @@ def dashboard_stats() -> dict:
         "finance": {k: f[k] for k in ("cash_on_hand", "monthly_income", "monthly_expenses", "revenue", "revenue_target")},
         "tabs": tabs,
     }
+
+
+# --- Conversations ----------------------------------------------------------
+
+def add_message(conversation_id: str, role: str, content: str) -> None:
+    with connect() as c:
+        c.execute("INSERT INTO messages (conversation_id, role, content) VALUES (?,?,?)",
+                  (conversation_id, role, content))
+
+
+def recent_messages(conversation_id: str, limit: int) -> list[dict]:
+    with connect() as c:
+        rows = c.execute("SELECT role, content, created_at FROM messages WHERE conversation_id = ? "
+                         "ORDER BY id DESC LIMIT ?", (conversation_id, limit)).fetchall()
+    return [dict(r) for r in reversed(rows)]
+
+
+# --- Memory -----------------------------------------------------------------
+
+def add_memory(text: str, tags: str, source: str, embedding: bytes | None) -> int:
+    with connect() as c:
+        cur = c.execute("INSERT INTO memories (text, tags, source, embedding) VALUES (?,?,?,?)",
+                        (text, tags, source, embedding))
+        return int(cur.lastrowid)
+
+
+def all_memories() -> list[dict]:
+    with connect() as c:
+        return [dict(r) for r in c.execute("SELECT * FROM memories ORDER BY id DESC").fetchall()]
+
+
+def delete_memory(memory_id: int) -> bool:
+    with connect() as c:
+        return c.execute("DELETE FROM memories WHERE id = ?", (memory_id,)).rowcount > 0
+
+
+# --- Jobs -------------------------------------------------------------------
+
+def add_job(name: str, prompt: str, role: str, kind: str, value: str, next_run: str | None) -> int:
+    with connect() as c:
+        cur = c.execute("INSERT INTO jobs (name, prompt, role, kind, value, next_run) VALUES (?,?,?,?,?,?)",
+                        (name, prompt, role, kind, value, next_run))
+        return int(cur.lastrowid)
+
+
+def list_jobs(include_disabled: bool = False) -> list[dict]:
+    q = "SELECT * FROM jobs" + ("" if include_disabled else " WHERE enabled = 1") + " ORDER BY id"
+    with connect() as c:
+        return [dict(r) for r in c.execute(q).fetchall()]
+
+
+def due_jobs(now_iso: str) -> list[dict]:
+    with connect() as c:
+        rows = c.execute("SELECT * FROM jobs WHERE enabled = 1 AND next_run IS NOT NULL AND next_run <= ?",
+                         (now_iso,)).fetchall()
+    return [dict(r) for r in rows]
+
+
+def update_job(job_id: int, **fields) -> None:
+    allowed = {"next_run", "last_run", "last_status", "enabled"}
+    sets = {k: v for k, v in fields.items() if k in allowed}
+    if not sets:
+        return
+    with connect() as c:
+        c.execute(f"UPDATE jobs SET {', '.join(f'{k} = ?' for k in sets)} WHERE id = ?", (*sets.values(), job_id))
+
+
+def delete_job(job_id: int) -> bool:
+    with connect() as c:
+        return c.execute("DELETE FROM jobs WHERE id = ?", (job_id,)).rowcount > 0
+
+
+# --- Inbox ------------------------------------------------------------------
+
+def add_inbox(title: str, body: str, source: str = "agent", job_id: int | None = None) -> dict:
+    with connect() as c:
+        cur = c.execute("INSERT INTO inbox (title, body, source, job_id) VALUES (?,?,?,?)",
+                        (title, body, source, job_id))
+        row = c.execute("SELECT * FROM inbox WHERE id = ?", (cur.lastrowid,)).fetchone()
+    return dict(row)
+
+
+def list_inbox(limit: int = 50) -> list[dict]:
+    with connect() as c:
+        return [dict(r) for r in c.execute("SELECT * FROM inbox ORDER BY id DESC LIMIT ?", (limit,)).fetchall()]
+
+
+def mark_inbox_read(item_id: int | None = None) -> None:
+    with connect() as c:
+        if item_id is None:
+            c.execute("UPDATE inbox SET read = 1")
+        else:
+            c.execute("UPDATE inbox SET read = 1 WHERE id = ?", (item_id,))
+
+
+# --- Audit ------------------------------------------------------------------
+
+def add_audit(actor: str, origin: str, role: str, tool: str, args: str, risk: str,
+              decision: str, ok: bool, result: str) -> None:
+    with connect() as c:
+        c.execute("INSERT INTO audit_log (actor, origin, role, tool, args, risk, decision, ok, result) "
+                  "VALUES (?,?,?,?,?,?,?,?,?)", (actor, origin, role, tool, args, risk, decision, int(ok), result))
+
+
+def list_audit(limit: int = 100) -> list[dict]:
+    with connect() as c:
+        return [dict(r) for r in c.execute("SELECT * FROM audit_log ORDER BY id DESC LIMIT ?", (limit,)).fetchall()]

@@ -1,0 +1,11 @@
+# /etc/systemd/system/jarvis-backup.timer
+[Unit]
+Description=Run Jarvis SQLite backup daily at 03:30
+
+[Timer]
+OnCalendar=*-*-* 03:30:00
+Persistent=true
+RandomizedDelaySec=120
+
+[Install]
+WantedBy=timers.target

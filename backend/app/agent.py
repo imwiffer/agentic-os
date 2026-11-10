@@ -101,6 +101,8 @@ class AgentResult:
     latency_ms: int = 0
     raw_plan: str = ""
     error: str | None = None
+    steps: list[dict] = field(default_factory=list)  # tool-call trace (runtime.py)
+    role: str = "jarvis"
 
     def to_dict(self) -> dict:
         d = asdict(self)

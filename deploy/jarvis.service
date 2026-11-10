@@ -1,0 +1,30 @@
+# /etc/systemd/system/jarvis.service
+[Unit]
+Description=Agentic OS - Jarvis Brain (FastAPI)
+After=network-online.target tailscaled.service ollama.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=jarvis
+Group=jarvis
+WorkingDirectory=/srv/jarvis/app/backend
+EnvironmentFile=/etc/jarvis/jarvis.env
+ExecStart=/srv/jarvis/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --proxy-headers --forwarded-allow-ips=127.0.0.1
+Restart=always
+RestartSec=3
+TimeoutStopSec=15
+
+# Sandboxing
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+ReadWritePaths=/srv/jarvis/data /srv/jarvis/workspace
+
+[Install]
+WantedBy=multi-user.target

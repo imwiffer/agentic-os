@@ -13,7 +13,15 @@ const STATUS_TEXT = {
 };
 const PROCESSING = new Set(['transcribing', 'thinking', 'speaking']);
 
-// Cards shown before the API answers, so the numbers visibly count up from $0.
+const VIEW_MAP = {
+    Dashboard: 'view-dashboard',
+    Inbox: 'view-inbox',
+    Calendar: 'view-calendar',
+    Memory: 'view-memory',
+    Agents: 'view-agents',
+    Settings: 'view-settings',
+};
+
 const SKELETON = {
     Overview: [
         { id: 'cash_on_hand', label: 'Cash on hand', value: 0, format: 'currency', icon: 'fas fa-wallet', color: 'green' },
@@ -21,6 +29,8 @@ const SKELETON = {
         { id: 'revenue_target', label: 'Revenue target', value: 0, format: 'currency', icon: 'fas fa-bullseye', color: 'purple' },
     ],
 };
+
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 // ---------- formatting ----------
 export function convert(card, s = appState) {
@@ -55,11 +65,12 @@ export function animateValue(el, from, to, render, duration = 1400) {
 // ---------- renderers ----------
 function renderSidebar(s) {
     document.querySelectorAll('[data-tab]').forEach((el) => el.classList.toggle('active', el.dataset.tab === s.currentTab));
-    const onDashboard = s.currentTab === 'Dashboard';
-    $('view-dashboard').classList.toggle('hidden', !onDashboard);
-    $('view-generic').classList.toggle('hidden', onDashboard);
-    $('url-bar').textContent = `localhost:8000/AgenticOS/${s.currentTab}`;
-    if (!onDashboard) {
+    const activeView = VIEW_MAP[s.currentTab] || 'view-generic';
+    for (const id of [...Object.values(VIEW_MAP), 'view-generic']) {
+        $(id)?.classList.toggle('hidden', id !== activeView);
+    }
+    $('url-bar').textContent = `${location.host || 'tailnet'}/AgenticOS/${s.currentTab}`;
+    if (activeView === 'view-generic') {
         const link = document.querySelector(`[data-tab="${s.currentTab}"] i`);
         $('generic-title').textContent = s.currentTab;
         $('generic-icon').className = `${link?.className.replace('w-4 text-center', '') || 'fas fa-cube'} text-4xl text-purple-400`;
@@ -138,7 +149,7 @@ function renderModels(s) {
     $('header-location').textContent = loc;
     $('panel-model-location').textContent = loc;
     $('panel-model-name').textContent = m.name;
-    $('panel-model-host').textContent = m.location === 'cloud' ? 'Via OpenAI-compatible API' : 'On this machine';
+    $('panel-model-host').textContent = m.location === 'cloud' ? 'Via OpenAI-compatible API' : 'On VPS (Ollama)';
     $('answer-model').textContent = m.name;
     document.querySelectorAll('[data-mode]').forEach((el) => el.classList.toggle('active', el.dataset.mode === m.location));
 
@@ -154,6 +165,139 @@ function renderModels(s) {
                 <span class="text-[9px] text-gray-500">${x.available ? x.size || '' : x.status || ''}</span>
             </div>`).join('');
     }).join('');
+}
+
+function renderInbox(s) {
+    const badge = $('inbox-badge');
+    badge.textContent = s.unreadInbox;
+    badge.classList.toggle('hidden', !s.unreadInbox);
+    const box = $('inbox-list');
+    if (!s.inbox.length) {
+        box.innerHTML = '<div class="glass-panel rounded-xl p-6 text-gray-500 text-xs">Inbox is empty. Scheduled task reports and agent notifications appear here.</div>';
+        return;
+    }
+    box.innerHTML = s.inbox.map((item) => `
+        <div class="glass-panel rounded-xl p-4 border ${item.read ? 'border-white/5 opacity-75' : 'border-purple-500/40'}">
+            <div class="flex items-center justify-between gap-2 mb-1">
+                <span class="font-medium text-white text-xs">${esc(item.title)}</span>
+                <span class="text-[10px] text-gray-500 font-mono">${esc(item.source)} · ${esc(item.created_at)}</span>
+            </div>
+            <div class="text-xs text-gray-300 whitespace-pre-wrap">${esc(item.body)}</div>
+        </div>`).join('');
+}
+
+function renderJobs(s) {
+    const box = $('job-list');
+    if (!s.jobs.length) {
+        box.innerHTML = '<div class="glass-panel rounded-xl p-6 text-gray-500 text-xs">No scheduled tasks yet. Add one above or tell Jarvis "every day at 08:00 check server health".</div>';
+        return;
+    }
+    box.innerHTML = s.jobs.map((j) => `
+        <div class="glass-panel rounded-xl p-4 flex items-center justify-between gap-4">
+            <div class="min-w-0">
+                <div class="text-xs font-medium text-white">${esc(j.description || j.name)}</div>
+                <div class="text-[11px] text-gray-400 truncate">${esc(j.prompt)}</div>
+                <div class="text-[10px] text-gray-500 font-mono mt-1">last: ${esc(j.last_run_local || 'never')} (${esc(j.last_status || 'pending')})</div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <button data-run-job="${j.id}" class="glass-button px-2.5 py-1 rounded text-[11px] text-emerald-300"><i class="fas fa-play mr-1"></i>Run</button>
+                <button data-del-job="${j.id}" class="glass-button px-2.5 py-1 rounded text-[11px] text-red-300"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>`).join('');
+}
+
+function renderMemories(s) {
+    const box = $('memory-list');
+    if (!s.memories.length) {
+        box.innerHTML = '<div class="glass-panel rounded-xl p-6 text-gray-500 text-xs">No memories stored yet. Say "remember that…" or add one above.</div>';
+        return;
+    }
+    box.innerHTML = s.memories.map((m) => `
+        <div class="glass-panel rounded-xl p-3 flex items-center justify-between gap-3">
+            <div class="min-w-0">
+                <div class="text-xs text-gray-200">${esc(m.text)}</div>
+                <div class="text-[10px] text-gray-500 font-mono mt-0.5">#${m.id} · ${esc(m.tags || 'untagged')} · ${esc(m.created_at)}</div>
+            </div>
+            <button data-del-memory="${m.id}" class="glass-button px-2.5 py-1 rounded text-[11px] text-red-300 shrink-0"><i class="fas fa-trash"></i></button>
+        </div>`).join('');
+}
+
+function renderAgents(s) {
+    const active = s.roles.find((r) => r.id === s.role);
+    $('role-pill').textContent = s.role;
+    $('header-role').textContent = active?.title || s.role.toUpperCase();
+    $('role-cards').innerHTML = s.roles.map((r) => `
+        <div data-select-role="${r.id}" class="glass-panel rounded-xl p-4 cursor-pointer border transition ${r.id === s.role ? 'border-purple-500 bg-purple-950/20' : 'border-white/10 hover:border-purple-500/40'}">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2 text-white font-semibold text-xs">
+                    <i class="${esc(r.icon)} text-purple-400"></i> ${esc(r.title)}
+                </div>
+                <span class="text-[10px] font-mono ${r.id === s.role ? 'text-emerald-400' : 'text-gray-500'}">${r.id === s.role ? 'ACTIVE' : 'Select'}</span>
+            </div>
+            <p class="text-[11px] text-gray-400 mb-3">You are ${esc(r.description)}</p>
+            <div class="flex flex-wrap gap-1">
+                ${(r.tools || []).map((t) => `<span class="px-1.5 py-0.5 rounded bg-white/5 text-[10px] font-mono text-gray-400">${esc(t)}</span>`).join('')}
+            </div>
+        </div>`).join('');
+}
+
+function renderSteps(s) {
+    const box = $('step-trace');
+    if (!s.steps.length) {
+        box.innerHTML = '<div class="text-gray-500">No tool calls recorded in this session yet.</div>';
+        return;
+    }
+    box.innerHTML = s.steps.slice(-20).reverse().map((st) => `
+        <div class="p-2 rounded bg-black/40 border border-white/5">
+            <div class="flex items-center justify-between">
+                <span class="text-purple-300">${esc(st.role || 'jarvis')} → ${esc(st.tool)}(${esc(JSON.stringify(st.args || {}))})</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded ${st.status === 'done' ? 'bg-emerald-900/40 text-emerald-300' : st.status === 'running' ? 'bg-sky-900/40 text-sky-300' : 'bg-red-900/40 text-red-300'}">${esc(st.status)}</span>
+            </div>
+            ${st.result ? `<div class="text-[11px] text-gray-400 mt-1 whitespace-pre-wrap">${esc(st.result)}</div>` : ''}
+        </div>`).join('');
+}
+
+function renderSettings(s) {
+    $('tool-mode-badge').textContent = `mode: ${s.toolMode}`;
+    const sys = s.system;
+    if (sys) {
+        const upH = sys.uptime_s ? `${Math.floor(sys.uptime_s / 86400)}d ${Math.floor((sys.uptime_s % 86400) / 3600)}h` : '—';
+        $('system-cards').innerHTML = [
+            ['Host / OS', `${sys.hostname} (${sys.cpu_count} vCPU)`, sys.os],
+            ['CPU & Load', `${sys.cpu_percent ?? 0}%`, sys.load_avg ? `load ${sys.load_avg.join(', ')}` : `uptime ${upH}`],
+            ['Memory', `${sys.mem_percent ?? 0}%`, `swap ${sys.swap_percent ?? 0}%`],
+            ['Disk & Ollama', `${sys.disk_percent}% used`, sys.ollama_loaded == null ? 'Ollama offline' : `loaded: ${sys.ollama_loaded.join(', ') || 'idle'}`],
+        ].map(([k, v, sub]) => `
+            <div class="glass-panel rounded-xl p-4">
+                <div class="text-[10px] text-gray-500 uppercase">${esc(k)}</div>
+                <div class="text-lg text-white font-medium mt-1">${esc(v)}</div>
+                <div class="text-[11px] text-gray-400 font-mono mt-0.5">${esc(sub)}</div>
+            </div>`).join('');
+    }
+    const auditBox = $('audit-list');
+    if (!s.audit.length) {
+        auditBox.innerHTML = '<div class="text-gray-500">No tool calls audited yet.</div>';
+        return;
+    }
+    auditBox.innerHTML = s.audit.map((a) => `
+        <div class="p-2 rounded bg-black/40 border border-white/5 flex items-start justify-between gap-3">
+            <div class="min-w-0">
+                <div><span class="text-gray-500">${esc(a.ts)}</span> · <span class="text-purple-300">${esc(a.actor)}/${esc(a.role)}</span> · <span class="text-white">${esc(a.tool)}</span> <span class="text-gray-400">${esc(a.args)}</span></div>
+                <div class="text-gray-400 truncate">${esc(a.result)}</div>
+            </div>
+            <span class="px-1.5 py-0.5 rounded text-[10px] shrink-0 ${a.ok ? 'bg-emerald-900/40 text-emerald-300' : 'bg-red-900/40 text-red-300'}">${esc(a.decision)}</span>
+        </div>`).join('');
+}
+
+function renderModals(s) {
+    const req = s.approvalRequest;
+    $('approval-modal').classList.toggle('hidden', !req);
+    if (req) {
+        $('approval-reason').textContent = req.reason || 'Approval requested';
+        $('approval-tool').textContent = req.tool;
+        $('approval-args').textContent = JSON.stringify(req.args, null, 2);
+    }
+    $('login-modal').classList.toggle('hidden', !(s.authRequired && !s.authenticated));
 }
 
 function renderStatus(s) {
@@ -201,6 +345,13 @@ function render(changed, s) {
     if (has('stats')) renderUsage(s);
     if (has('user')) renderUser(s);
     if (has('models', 'model')) renderModels(s);
+    if (has('inbox', 'unreadInbox')) renderInbox(s);
+    if (has('jobs')) renderJobs(s);
+    if (has('memories')) renderMemories(s);
+    if (has('roles', 'role')) renderAgents(s);
+    if (has('steps')) renderSteps(s);
+    if (has('system', 'audit', 'toolMode')) renderSettings(s);
+    if (has('approvalRequest', 'authRequired', 'authenticated')) renderModals(s);
     if (has('status')) renderStatus(s);
     if (has('voiceActive', 'listening')) renderMic(s);
     if (has('connected')) renderConnection(s);
@@ -214,7 +365,7 @@ function render(changed, s) {
 
 export function initRenderer() {
     subscribe(render);
-    render(Object.fromEntries(Object.keys(appState).map((k) => [k, appState[k]])), appState); // first paint
+    render(Object.fromEntries(Object.keys(appState).map((k) => [k, appState[k]])), appState);
 }
 
 // ---------- effects ----------
@@ -222,7 +373,7 @@ export function highlightCard(id) {
     const el = document.querySelector(`[data-card="${id}"]`);
     if (!el) return false;
     el.classList.remove('card-highlight');
-    void el.offsetWidth; // restart animation
+    void el.offsetWidth;
     el.classList.add('card-highlight');
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return true;
