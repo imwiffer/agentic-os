@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic OS · Jarvis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] } } }
+        }
+    </script>
+    <link rel="stylesheet" href="css/jarvis.css">
+</head>
+<body class="h-screen w-screen flex flex-col text-sm" data-status="idle">
+
+    <!-- TOP NAV / BROWSER MOCKUP -->
+    <div class="h-8 bg-[#1e1e1e] border-b border-gray-800 flex items-center px-2 gap-4 text-[10px] text-gray-400 select-none">
+        <div class="flex gap-1.5">
+            <div class="w-2 h-2 rounded-full bg-red-500"></div>
+            <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+            <div class="w-2 h-2 rounded-full bg-green-500"></div>
+        </div>
+        <div class="flex items-center gap-1 bg-[#1e1e1e] border border-gray-700 rounded px-2 h-5 w-full max-w-md">
+            <i class="fas fa-lock text-[8px]"></i>
+            <span class="text-gray-500 truncate" id="url-bar">localhost:8000/AgenticOS</span>
+        </div>
+        <div class="ml-auto flex items-center gap-1.5 pr-2" title="Brain connection">
+            <span id="conn-dot" class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+            <span id="conn-label">offline</span>
+        </div>
+    </div>
+
+    <div class="flex flex-1 overflow-hidden">
+
+        <!-- SIDEBAR -->
+        <aside class="w-48 bg-[#111113] border-r border-[#222] flex flex-col py-4 px-2 z-20">
+            <div class="flex items-center gap-2 px-2 mb-8 text-gray-300">
+                <div class="w-6 h-6 bg-orange-500 rounded text-white flex items-center justify-center font-bold"><i class="fas fa-wind"></i></div>
+                <div>
+                    <div class="font-semibold text-xs tracking-wide">Agentic OS</div>
+                    <div class="text-[9px] text-gray-500 uppercase tracking-widest">Beta Build</div>
+                </div>
+            </div>
+
+            <div class="text-xs font-bold text-gray-500 px-2 mb-2 uppercase tracking-wider">Workspace</div>
+            <nav class="flex flex-col gap-1">
+                <a href="#" class="nav-link" data-tab="Dashboard"><i class="fas fa-layer-group w-4 text-center"></i> Dashboard</a>
+                <a href="#" class="nav-link" data-tab="Inbox"><i class="fas fa-envelope w-4 text-center"></i> Inbox</a>
+                <a href="#" class="nav-link" data-tab="Chat"><i class="fas fa-comments w-4 text-center"></i> Chat</a>
+                <a href="#" class="nav-link" data-tab="Calendar"><i class="fas fa-calendar w-4 text-center"></i> Calendar</a>
+                <a href="#" class="nav-link" data-tab="Memory"><i class="fas fa-brain w-4 text-center"></i> Memory</a>
+            </nav>
+
+            <div class="mt-8 text-xs font-bold text-gray-500 px-2 mb-2 uppercase tracking-wider">Tools</div>
+            <nav class="flex flex-col gap-1">
+                <a href="#" class="nav-link" data-tab="Design"><i class="fas fa-pen-ruler w-4 text-center"></i> Design</a>
+                <a href="#" class="nav-link" data-tab="Website"><i class="fas fa-globe w-4 text-center"></i> Website</a>
+                <a href="#" class="nav-link" data-tab="Agents"><i class="fas fa-robot w-4 text-center"></i> Agents</a>
+                <a href="#" class="nav-link" data-tab="Settings"><i class="fas fa-cog w-4 text-center"></i> Settings</a>
+            </nav>
+
+            <div class="mt-auto pt-4 border-t border-gray-800 px-2 flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500"></div>
+                <div class="flex flex-col">
+                    <span class="text-xs font-medium" id="user-name">—</span>
+                    <span class="text-[9px] text-gray-500" id="user-title">Personal Profile</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN -->
+        <main id="main-scroll" class="flex-1 flex flex-col bg-black relative overflow-y-auto overflow-x-hidden">
+            <div class="absolute top-0 left-0 w-full h-[500px] bg-purple-900/10 blur-[100px] -z-10 pointer-events-none"></div>
+
+            <!-- Header -->
+            <header class="h-14 border-b border-[#222] flex items-center justify-between px-6 shrink-0 sticky top-0 z-40 bg-black/70 backdrop-blur-md">
+                <div class="flex items-center gap-2 text-sm">
+                    <span class="font-semibold text-gray-200">Agent</span>
+                    <span class="text-gray-500">/</span>
+                    <span class="bg-[#222] px-2 py-0.5 rounded text-gray-300" id="header-location">Local</span>
+                    <span class="text-gray-500">/</span>
+                    <span id="agent-status" class="agent-status">Standing by</span>
+                </div>
+
+                <div class="flex items-center gap-3 relative">
+                    <select id="currency-select" title="Display currency"
+                            class="glass-button bg-[#222] border border-[#444] rounded-md text-xs px-2 py-1.5 text-gray-300 outline-none cursor-pointer">
+                        <option value="USD">USD</option>
+                    </select>
+                    <button id="chat-btn" class="flex items-center gap-2 glass-button px-3 py-1.5 rounded-full text-gray-400 text-xs">
+                        <i class="far fa-comment-alt"></i> Chat
+                    </button>
+                    <button id="voice-btn" class="voice-btn flex items-center gap-2 glass-button px-3 py-1.5 rounded-full text-gray-400 text-xs" title="Toggle voice (Ctrl+Space)">
+                        <i id="mic-icon" class="fas fa-microphone"></i> <span id="voice-label">Voice</span>
+                    </button>
+                    <div class="h-4 w-[1px] bg-gray-700 mx-1"></div>
+                    <button id="model-button" class="flex items-center gap-2 glass-button px-3 py-1.5 rounded-md text-xs bg-[#222] border border-[#444] w-48 justify-between">
+                        <span id="model-label" class="truncate">Loading models…</span>
+                        <i class="fas fa-chevron-down text-[10px] text-gray-500"></i>
+                    </button>
+                    <div id="modelSelector" class="absolute top-10 right-0 w-64 glass-panel rounded-md shadow-2xl hidden z-50 overflow-hidden max-h-96 overflow-y-auto">
+                        <div id="model-list"></div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- DASHBOARD VIEW -->
+            <div id="view-dashboard" class="p-6 space-y-6 pb-40">
+
+                <!-- Top Stats Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div id="usage-cards" class="contents"></div>
+
+                    <!-- AI Models small panel -->
+                    <div class="glass-panel rounded-xl p-2 flex flex-col h-32 relative overflow-hidden border border-purple-500/30">
+                        <div class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase mb-2 flex items-center gap-1">
+                            <i class="fas fa-star text-[8px] text-yellow-500"></i> AI Models
+                        </div>
+                        <div class="flex items-center justify-between pl-2 pr-3">
+                            <div>
+                                <div class="text-lg font-medium" id="panel-model-location">Local</div>
+                                <div class="text-xs text-green-400 bg-green-900/30 px-1.5 rounded py-0.5 inline-block" id="panel-model-name">—</div>
+                                <div class="text-xs text-gray-500 mt-1" id="panel-model-host">On this machine</div>
+                            </div>
+                            <div class="w-12 h-12 rounded-full border border-gray-600 overflow-hidden relative">
+                                <img src="https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=200&auto=format&fit=crop" class="w-full h-full object-cover" alt="">
+                            </div>
+                        </div>
+                        <div class="mt-auto px-3 py-2 flex gap-2">
+                            <button class="mode-btn flex-1 rounded py-1 text-[10px] text-center" data-mode="cloud">Cloud</button>
+                            <button class="mode-btn flex-1 rounded py-1 text-[10px] text-center" data-mode="local">Local</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MAIN AI MODELS SECTION -->
+                <section id="ai-models-section" class="glass-panel rounded-2xl overflow-hidden min-h-[300px] relative border border-purple-500/20 shadow-2xl shadow-purple-900/10">
+                    <div class="absolute top-0 left-0 right-0 p-4 bg-black/60 backdrop-blur-md z-10 flex justify-between items-start border-b border-white/5">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-medium text-gray-300 flex items-center gap-1"><i class="fas fa-star text-xs text-purple-400"></i> AI Models</span>
+                            <button id="details-btn" class="text-[10px] text-gray-400 hover:text-white flex items-center gap-1 px-2 py-1 rounded hover:bg-white/10"><i class="fas fa-list-ul"></i> Details</button>
+                        </div>
+                        <div class="text-[10px] font-mono text-gray-500" id="engine-label">engine: —</div>
+                    </div>
+
+                    <div class="absolute top-16 left-4 bottom-4 w-64 bg-black/40 backdrop-blur-xl rounded-xl border border-white/10 p-4 z-20 text-xs">
+                        <div class="flex gap-2 mb-4">
+                            <button class="mode-btn flex-1 py-1.5 rounded text-[11px]" data-mode="cloud">Cloud</button>
+                            <button class="mode-btn flex-1 py-1.5 rounded text-[11px]" data-mode="local">Local</button>
+                        </div>
+                        <div>
+                            <div class="text-[10px] text-gray-500 uppercase mb-1">Connectors</div>
+                            <div class="flex gap-2">
+                                <div class="glass-button px-3 py-1 rounded-full text-[10px] flex items-center gap-2" id="connector-status">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-red-500"></div> Off
+                                </div>
+                                <div class="glass-button px-3 py-1 rounded-full text-[10px] text-gray-400" id="stt-label">STT: browser</div>
+                            </div>
+                        </div>
+                        <div class="mt-6 pt-4 border-t border-white/10">
+                            <div class="mb-2 text-[11px] text-gray-300 font-medium"><span id="answer-model">—</span> answers</div>
+                            <div class="mb-2 text-[11px] text-gray-300 font-medium">Jarvis runs the tools</div>
+                            <hr class="border-white/10 my-2">
+                            <div class="space-y-2 text-[10px] text-gray-400" id="tool-list">
+                                <div class="flex justify-between"><span><i class="fas fa-table-columns w-4"></i> open_tab</span><span data-tool-count="openTab">0</span></div>
+                                <div class="flex justify-between"><span><i class="fas fa-wallet w-4"></i> check_balance</span><span data-tool-count="checkBalance">0</span></div>
+                                <div class="flex justify-between"><span><i class="fas fa-chart-line w-4"></i> get_income</span><span data-tool-count="getIncome">0</span></div>
+                                <div class="flex justify-between"><span><i class="fas fa-coins w-4"></i> set_currency</span><span data-tool-count="setCurrency">0</span></div>
+                                <div class="flex justify-between"><span><i class="fas fa-arrows-up-down w-4"></i> scroll_page</span><span data-tool-count="scrollPage">0</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="absolute right-0 top-16 bottom-4 left-64 bg-black/20 backdrop-blur-sm border-l border-white/5 flex items-center justify-center overflow-hidden">
+                        <div class="absolute inset-0 galaxy-bg">
+                            <div class="nebula"></div>
+                            <div class="ribbon"></div>
+                            <div class="ribbon ribbon-2"></div>
+                            <div class="scanline"></div>
+                        </div>
+                        <div class="z-10 glass-panel px-3 py-1 rounded text-[10px] border-l-2 border-l-purple-500 font-mono">
+                            Your data: +<span id="token-counter">0</span> tokens processed
+                        </div>
+                        <div class="absolute bottom-4 left-4 flex gap-3">
+                            <div class="flex flex-col items-center text-[10px] text-gray-400"><i class="fas fa-cloud text-purple-500"></i><span>OpenRouter</span></div>
+                            <div class="flex flex-col items-center text-[10px] text-gray-400"><i class="fas fa-fish text-orange-500"></i><span>Fish Audio</span></div>
+                            <div class="flex flex-col items-center text-[10px] text-gray-400"><i class="fas fa-file-code text-pink-500"></i><span>Firecrawl</span></div>
+                            <div class="flex flex-col items-center text-[10px] text-gray-400"><i class="fas fa-atom text-blue-500"></i><span>ApiFly</span></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Your Business In Focus -->
+                <section id="business-section">
+                    <div class="flex items-end justify-between mb-6">
+                        <div>
+                            <div class="text-xs text-gray-500 font-bold tracking-widest mb-1">YOUR BUSINESS, IN FOCUS</div>
+                            <h2 class="text-3xl text-white font-medium">Room to grow.</h2>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-500 italic" id="data-source">Waiting for data…</span>
+                            <div class="w-2 h-2 rounded-full bg-gray-600" id="data-dot"></div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 mb-8" id="business-tabs">
+                        <button class="btab" data-btab="Overview">Overview</button>
+                        <button class="btab" data-btab="Finances">Finances</button>
+                        <button class="btab" data-btab="Progress">Progress</button>
+                        <button class="btab" data-btab="Audience">Audience</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="stat-cards"></div>
+                </section>
+            </div>
+
+            <!-- GENERIC VIEW (other sidebar sections) -->
+            <div id="view-generic" class="hidden flex-1 p-6">
+                <div class="glass-panel rounded-2xl p-10 h-full min-h-[400px] flex flex-col items-center justify-center text-center gap-3">
+                    <i id="generic-icon" class="fas fa-layer-group text-4xl text-purple-400"></i>
+                    <h2 id="generic-title" class="text-2xl text-white font-medium">Section</h2>
+                    <p class="text-gray-400 max-w-md">This module isn't wired to an agent yet. Say <span class="text-purple-300">"open dashboard"</span> to return.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- THINKING OVERLAY -->
+    <div id="thinking-overlay" class="glass-panel rounded-full px-4 py-2 flex items-center gap-3 text-xs text-gray-200">
+        <span class="dots"><span></span><span></span><span></span></span>
+        <span id="thinking-text">Analyzing…</span>
+    </div>
+
+    <!-- JARVIS HUD -->
+    <div id="hud" class="fixed bottom-6 right-6 w-80 rounded-xl overflow-hidden shadow-2xl border border-gray-700 bg-black/85 backdrop-blur-xl z-50">
+        <div class="flex items-center gap-3 px-3 py-3 border-b border-gray-800">
+            <div class="orb" id="jarvis-orb"></div>
+            <div class="flex-1 min-w-0">
+                <div class="text-xs font-semibold tracking-widest text-sky-300">J.A.R.V.I.S.</div>
+                <div class="text-[10px] text-gray-400 font-mono truncate" id="hud-status">AGENT_LOGIC_IDLE</div>
+            </div>
+            <button id="hud-toggle" class="text-gray-500 hover:text-white text-xs px-1"><i class="fas fa-chevron-down"></i></button>
+        </div>
+        <div id="hud-body">
+            <div id="hud-log" class="h-48 overflow-y-auto px-3 py-2 space-y-1.5 text-[11px] font-mono no-scrollbar"></div>
+            <form id="hud-form" class="flex border-t border-gray-800">
+                <input id="hud-input" autocomplete="off" placeholder="Type a command… e.g. open finances"
+                       class="flex-1 bg-transparent px-3 py-2 text-xs outline-none placeholder-gray-600">
+                <button class="px-3 text-purple-400 hover:text-white"><i class="fas fa-paper-plane"></i></button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

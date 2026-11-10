@@ -1,0 +1,513 @@
+
+
+Here is a complete, single-file solution using **HTML, CSS (Tailwind via CDN), and JavaScript**.
+
+I have recreated the **"Agentic OS"** dashboard look with a focus on the glassmorphism aesthetic (translucent backgrounds) and interactivity.
+
+### How to use this:
+1.  Copy the code block below.
+2.  Paste it into a text editor (Notepad, TextEdit, VS Code).
+3.  Save the file as `dashboard.html`.
+4.  Open that file in your browser (Chrome, Firefox, etc.).
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic OS Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        app: {
+                            bg: '#0a0a0c',
+                            sidebar: '#111113',
+                            panel: '#1f1f23',
+                            accent: '#5b5cff',
+                            glass: 'rgba(255, 255, 255, 0.05)',
+                            border: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #050505;
+            color: #e2e8f0;
+            overflow: hidden; /* Keep it app-like */
+        }
+        
+        /* Glassmorphism Utilities */
+        .glass-panel {
+            background: rgba(31, 31, 35, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-button {
+            background: rgba(255, 255, 255, 0.08);
+            transition: all 0.2s ease;
+        }
+        .glass-button:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Scrollbar hide */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Galaxy Background Animation for the AI Model Panel */
+        .galaxy-bg {
+            background: radial-gradient(circle at 30% 50%, #2b1055, #000);
+            position: relative;
+            overflow: hidden;
+        }
+        .nebula {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 150%;
+            height: 150%;
+            background: radial-gradient(ellipse at center, rgba(139, 92, 246, 0.15) 0%, rgba(0,0,0,0) 70%);
+            transform: translate(-50%, -50%) rotate(45deg);
+            animation: pulse 10s infinite alternate;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.5; transform: translate(-50%, -50%) scale(0.9); }
+            100% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        /* Simulate the ribbon effect */
+        .ribbon {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            background: linear-gradient(90deg, transparent, rgba(255, 165, 0, 0.2), transparent);
+            transform: translateY(-50%) rotate(-10deg);
+        }
+
+        .active-pill {
+            background: #42424a !important;
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col text-sm">
+
+    <!-- TOP NAV / BROWSER MOCKUP -->
+    <div class="h-8 bg-[#1e1e1e] border-b border-gray-800 flex items-center px-2 gap-4 text-[10px] text-gray-400 select-none">
+        <div class="flex gap-1.5">
+            <div class="w-2 h-2 rounded-full bg-red-500"></div>
+            <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+            <div class="w-2 h-2 rounded-full bg-green-500"></div>
+        </div>
+        <div class="flex items-center gap-1 bg-[#1e1e1e] border border-gray-700 rounded px-2 h-5 w-full max-w-md">
+            <i class="fas fa-lock text-[8px]"></i>
+            <span class="text-gray-500 truncate">localhost:3000/AgenticOS</span>
+        </div>
+    </div>
+
+    <!-- APP CONTAINER -->
+    <div class="flex flex-1 overflow-hidden">
+        
+        <!-- SIDEBAR -->
+        <aside class="w-48 bg-[#111113] border-r border-[#222] flex flex-col py-4 px-2 z-20">
+            <div class="flex items-center gap-2 px-2 mb-8 text-gray-300">
+                <div class="w-6 h-6 bg-orange-500 rounded text-white flex items-center justify-center font-bold"><i class="fas fa-wind"></i></div>
+                <div>
+                    <div class="font-semibold text-xs tracking-wide">Agentic OS</div>
+                    <div class="text-[9px] text-gray-500 uppercase tracking-widest">Beta Build</div>
+                </div>
+            </div>
+
+            <div class="text-xs font-bold text-gray-500 px-2 mb-2 uppercase tracking-wider">Workspace</div>
+            <nav class="flex flex-col gap-1">
+                <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-md bg-purple-900/30 text-white border border-purple-500/20">
+                    <i class="fas fa-layer-group w-4 text-center"></i> Dashboard
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white/5 text-gray-400 hover:text-white transition">
+                    <i class="fas fa-envelope w-4 text-center"></i> Inbox
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white/5 text-gray-400 hover:text-white transition">
+                    <i class="fas fa-comments w-4 text-center"></i> Chat
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white/5 text-gray-400 hover:text-white transition">
+                    <i class="fas fa-calendar w-4 text-center"></i> Calendar
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white/5 text-gray-400 hover:text-white transition">
+                    <i class="fas fa-brain w-4 text-center"></i> Memory
+                </a>
+            </nav>
+
+            <div class="mt-8 text-xs font-bold text-gray-500 px-2 mb-2 uppercase tracking-wider">Tools</div>
+            <nav class="flex flex-col gap-1">
+                <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white/5 text-gray-400 hover:text-white transition">
+                    <i class="fas fa-pen-ruler w-4 text-center"></i> Design
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white/5 text-gray-400 hover:text-white transition">
+                    <i class="fas fa-globe w-4 text-center"></i> Website
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white/5 text-gray-400 hover:text-white transition">
+                    <i class="fas fa-robot w-4 text-center"></i> Agents
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white/5 text-gray-400 hover:text-white transition">
+                    <i class="fas fa-cog w-4 text-center"></i> Settings
+                </a>
+            </nav>
+
+            <div class="mt-auto pt-4 border-t border-gray-800 px-2 flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500"></div>
+                <div class="flex flex-col">
+                    <span class="text-xs font-medium">Jack Roberts</span>
+                    <span class="text-[9px] text-gray-500">Personal Profile</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 flex flex-col bg-black relative overflow-y-auto overflow-x-hidden">
+            
+            <!-- Background Ambient Glow -->
+            <div class="absolute top-0 left-0 w-full h-[500px] bg-purple-900/10 blur-[100px] -z-10 pointer-events-none"></div>
+
+            <!-- Header -->
+            <header class="h-14 border-b border-[#222] flex items-center justify-between px-6 shrink-0">
+                <div class="flex items-center gap-2 text-sm">
+                    <span class="font-semibold text-gray-200">Agent</span>
+                    <span class="text-gray-500">/</span>
+                    <div class="flex items-center gap-1 bg-[#222] px-2 py-0.5 rounded cursor-pointer hover:bg-[#333] transition">
+                        <span class="text-gray-300">Local</span>
+                        <i class="fas fa-chevron-down text-[10px] text-gray-500"></i>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2 glass-button px-3 py-1.5 rounded-full text-gray-400 text-xs hover:bg-opacity-20 cursor-pointer" onclick="toggleVoice()">
+                        <i class="far fa-comment-alt"></i> Chat
+                    </div>
+                    <div class="flex items-center gap-2 glass-button px-3 py-1.5 rounded-full text-gray-400 text-xs hover:bg-opacity-20 cursor-pointer" onclick="toggleVoice()">
+                        <i class="fas fa-microphone"></i> Voice
+                    </div>
+                    <div class="h-4 w-[1px] bg-gray-700 mx-1"></div>
+                    <button class="flex items-center gap-2 glass-button px-3 py-1.5 rounded-md text-xs bg-[#222] border border-[#444] w-40 justify-between group relative" onclick="toggleModelSelector()">
+                        <span class="truncate max-w-[5rem]">Local: Qwen 3.8 27B</span>
+                        <i class="fas fa-chevron-down text-[10px] text-gray-500"></i>
+                    </button>
+                    <!-- Hidden Model Selector Tooltip -->
+                    <div id="modelSelector" class="absolute top-10 right-6 w-40 glass-panel rounded-md shadow-2xl hidden z-50 overflow-hidden">
+                        <div class="p-2 text-[10px] font-bold text-gray-500 uppercase">Local Models</div>
+                        <div class="p-1 hover:bg-white/10 cursor-pointer text-xs flex items-center gap-2 p-2 border-l-2 border-white">
+                            <div class="w-2 h-2 rounded-full bg-green-500"></div> Qwen 3.8 27B
+                        </div>
+                        <div class="p-1 hover:bg-white/10 cursor-pointer text-xs flex items-center gap-2 p-2 border-l-2 border-transparent">
+                            <div class="w-2 h-2 rounded-full bg-green-500"></div> Llama-3-8B
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <div class="p-6 space-y-6 pb-20">
+                
+                <!-- Top Stats Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <!-- Card 1 -->
+                    <div class="glass-panel rounded-xl p-4 flex items-center justify-between hover:border-gray-600 transition cursor-pointer group">
+                        <div class="flex items-center gap-4">
+                            <div class="w-16 h-16 rounded-full bg-[#333] relative overflow-hidden shadow-lg">
+                                <img src="https://images.unsplash.com/photo-1541963463532-d68292c34b19?q=80&w=256&auto=format&fit=crop" class="w-full h-full object-cover opacity-80 group-hover:scale-110 transition duration-500">
+                            </div>
+                            <div>
+                                <div class="text-2xl font-light text-white">16%</div>
+                                <div class="text-xs text-gray-400">Claude weekly used</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 2 -->
+                    <div class="glass-panel rounded-xl p-4 flex items-center justify-between hover:border-gray-600 transition cursor-pointer group">
+                        <div class="flex items-center gap-4">
+                            <div class="w-16 h-16 rounded-full bg-[#333] relative overflow-hidden shadow-lg">
+                                <img src="https://images.unsplash.com/photo-1614728853970-00e10288011a?q=80&w=256&auto=format&fit=crop" class="w-full h-full object-cover opacity-80 group-hover:scale-110 transition duration-500">
+                            </div>
+                            <div>
+                                <div class="text-2xl font-light text-white">9%</div>
+                                <div class="text-xs text-gray-400">Codex weekly used</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Side AI Models Small Panel -->
+                    <div class="glass-panel rounded-xl p-2 flex flex-col h-32 relative overflow-hidden border border-purple-500/30">
+                         <div class="absolute top-0 right-0 p-2 flex gap-2">
+                             <div class="w-2 h-2 rounded-full bg-gray-600 cursor-pointer hover:bg-white"></div>
+                             <div class="w-2 h-2 rounded-full bg-gray-600 cursor-pointer hover:bg-white"></div>
+                             <div class="w-2 h-2 rounded-full bg-red-500/50 cursor-pointer hover:bg-red-400"></div>
+                         </div>
+                         <div class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase mb-2 flex items-center gap-1">
+                            <i class="fas fa-star text-[8px] text-yellow-500"></i> AI Models
+                         </div>
+                         
+                         <div class="flex items-center justify-between pl-2">
+                             <div>
+                                 <div class="text-lg font-medium">Local</div>
+                                 <div class="text-xs text-green-400 bg-green-900/30 px-1.5 rounded py-0.5 inline-block">Qwen 3.8 27B</div>
+                                 <div class="text-xs text-gray-500 mt-1">On this Mac</div>
+                             </div>
+                             <div class="w-12 h-12 rounded-full border border-gray-600 overflow-hidden relative">
+                                 <img src="https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=200&auto=format&fit=crop" class="w-full h-full object-cover">
+                             </div>
+                         </div>
+                         <div class="mt-auto px-3 py-2 flex gap-2">
+                            <div class="flex-1 glass-button rounded py-1 text-[10px] text-center hover:bg-white/10">Cloud</div>
+                            <div class="flex-1 bg-[#333] rounded py-1 text-[10px] text-center font-bold shadow-lg">Local</div>
+                            <div class="w-6 h-6 rounded bg-white/5 flex items-center justify-center hover:bg-white/20 text-gray-300"><i class="fas fa-plus text-xs"></i></div>
+                         </div>
+                    </div>
+                </div>
+
+                <!-- MAIN AI MODELS SECTION -->
+                <section class="glass-panel rounded-2xl overflow-hidden min-h-[300px] relative border border-purple-500/20 shadow-2xl shadow-purple-900/10 group">
+                    <!-- Tabs & Header -->
+                    <div class="absolute top-0 left-0 right-0 p-4 bg-black/60 backdrop-blur-md z-10 flex justify-between items-start border-b border-white/5">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-medium text-gray-300 flex items-center gap-1"><i class="fas fa-star text-xs text-purple-400"></i> AI Models</span>
+                            <button onclick="toggleDetails()" class="text-[10px] text-gray-400 hover:text-white flex items-center gap-1 px-2 py-1 rounded hover:bg-white/10"><i class="fas fa-list-ul"></i> Details</button>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="glass-button px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider hover:text-white">Add a model</button>
+                        </div>
+                    </div>
+
+                    <!-- Left Panel (Controls) -->
+                    <div class="absolute top-16 left-4 bottom-4 w-64 bg-black/40 backdrop-blur-xl rounded-xl border border-white/10 p-4 z-20 text-xs">
+                        <div class="flex gap-2 mb-4">
+                            <button class="flex-1 py-1.5 rounded bg-white/10 text-gray-300 text-[11px]">18% Cloud</button>
+                            <button class="flex-1 py-1.5 rounded bg-[#5b5cff]/80 text-white text-[11px] font-bold shadow-lg shadow-purple-500/20">Local</button>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <div>
+                                <div class="text-[10px] text-gray-500 uppercase mb-1">Connectors</div>
+                                <div class="flex gap-2">
+                                    <div class="glass-button px-3 py-1 rounded-full text-[10px] flex items-center gap-2 text-green-400">
+                                        <div class="w-1.5 h-1.5 rounded-full bg-green-500"></div> On
+                                    </div>
+                                    <div class="glass-button px-3 py-1 rounded-full text-[10px] text-gray-400 hover:text-white">
+                                        Locked
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 pt-4 border-t border-white/10">
+                            <div class="mb-2 text-[11px] text-gray-300 font-medium">Qwen 3.8 27B Answers</div>
+                            <div class="mb-2 text-[11px] text-gray-300 font-medium">Claude Code runs the jobs</div>
+                            <hr class="border-white/10 my-2">
+                            
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between text-[10px] text-gray-400 hover:text-white cursor-pointer group/item">
+                                    <span class="flex items-center gap-1"><i class="fab fa-hammer"></i> Hannes</span>
+                                    <span>703</span>
+                                </div>
+                                <div class="flex items-center justify-between text-[10px] text-gray-400 hover:text-white cursor-pointer group/item">
+                                    <span class="flex items-center gap-1"><i class="fab fa-cloudfoundry"></i> Mistral</span>
+                                    <span>441</span>
+                                </div>
+                                <div class="flex items-center justify-between text-[10px] text-gray-400 hover:text-white cursor-pointer group/item">
+                                    <span class="flex items-center gap-1"><i class="fas fa-bolt"></i> Skyfall</span>
+                                    <span>371</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Panel (Visuals & Ribbon) -->
+                    <div class="absolute right-0 top-16 bottom-4 left-64 bg-black/20 backdrop-blur-sm border-l border-white/5 flex items-center justify-center overflow-hidden">
+                         <!-- Dynamic Galaxy Background -->
+                         <div class="absolute inset-0 galaxy-bg">
+                             <div class="nebula"></div>
+                             <div class="ribbon"></div>
+                         </div>
+                         
+                         <!-- Floating Text -->
+                         <div class="z-10 glass-panel px-3 py-1 rounded text-[10px] border-l-2 border-l-purple-500 animate-pulse">
+                             Your data: +195 tokens processed
+                         </div>
+
+                         <!-- Bottom Icons Row -->
+                         <div class="absolute bottom-4 right-4 flex gap-4 text-gray-400">
+                            <div class="flex flex-col items-center gap-1 text-[10px] group">
+                                <div class="w-8 h-8 rounded-full glass-button flex items-center justify-center text-purple-400 group-hover:bg-purple-500 transition"><i class="fas fa-lock"></i></div>
+                                <span>LOCKED</span>
+                            </div>
+                             <!-- Add more dummy icons as per screenshot context -->
+                         </div>
+                         <div class="absolute bottom-4 left-4 flex gap-3">
+                             <div class="flex flex-col items-center text-[10px] text-gray-400 cursor-pointer hover:text-white">
+                                 <i class="fas fa-cloud text-purple-500"></i>
+                                 <span>OpenRouter</span>
+                             </div>
+                             <div class="flex flex-col items-center text-[10px] text-gray-400 cursor-pointer hover:text-white">
+                                 <i class="fas fa-fish text-orange-500"></i>
+                                 <span>Fish Audio</span>
+                             </div>
+                             <div class="flex flex-col items-center text-[10px] text-gray-400 cursor-pointer hover:text-white">
+                                 <i class="fas fa-file-code text-pink-500"></i>
+                                 <span>Firecrawl</span>
+                             </div>
+                             <div class="flex flex-col items-center text-[10px] text-gray-400 cursor-pointer hover:text-white">
+                                 <i class="fas fa-atom text-blue-500"></i>
+                                 <span>ApiFly</span>
+                             </div>
+                         </div>
+                    </div>
+                </section>
+
+                <!-- Your Business In Focus -->
+                <section>
+                    <div class="flex items-end justify-between mb-6">
+                        <div>
+                            <div class="text-xs text-gray-500 font-bold tracking-widest mb-1">YOUR BUSINESS, IN FOCUS</div>
+                            <h2 class="text-3xl text-white font-medium">Room to grow.</h2>
+                        </div>
+                        <div class="flex gap-2">
+                            <span class="text-xs text-gray-500 italic">Demo numbers on</span>
+                            <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                            <div class="flex items-center gap-2 ml-4 border border-white/10 rounded-md px-3 py-1.5 bg-white/5 hover:bg-white/10 cursor-pointer transition">
+                                <i class="fab fa-youtube text-red-500 text-xs"></i>
+                                <span class="text-xs text-gray-300">Connect accounts</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabs -->
+                    <div class="flex gap-2 mb-8">
+                        <button class="px-5 py-1.5 rounded-full bg-[#333] text-white text-xs font-medium shadow-lg shadow-white/5">Overview</button>
+                        <button class="px-5 py-1.5 rounded-full glass-button text-gray-400 text-xs hover:text-white">Finances</button>
+                        <button class="px-5 py-1.5 rounded-full glass-button text-gray-400 text-xs hover:text-white">Progress</button>
+                        <button class="px-5 py-1.5 rounded-full glass-button text-gray-400 text-xs hover:text-white">Audience</button>
+                    </div>
+
+                    <!-- Cards Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Cash on Hand -->
+                        <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-5 border border-white/10 hover:border-purple-500/50 transition cursor-pointer group">
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="w-10 h-10 rounded-full bg-[#222] flex items-center justify-center text-green-400 group-hover:scale-110 transition">
+                                    <i class="fas fa-wallet"></i>
+                                </div>
+                                <span class="text-[10px] text-gray-500">Demo</span>
+                            </div>
+                            <div class="text-sm text-gray-400 mb-1">Cash on hand</div>
+                            <div class="text-2xl font-light text-white">$14,204.00</div>
+                        </div>
+
+                        <!-- Monthly Income -->
+                        <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-5 border border-white/10 hover:border-purple-500/50 transition cursor-pointer group">
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="w-10 h-10 rounded-full bg-[#222] flex items-center justify-center text-blue-400 group-hover:scale-110 transition">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <span class="text-[10px] text-gray-500">Demo</span>
+                            </div>
+                            <div class="text-sm text-gray-400 mb-1">Monthly income</div>
+                            <div class="text-2xl font-light text-white">$8,320.00</div>
+                        </div>
+
+                        <!-- Revenue Target -->
+                        <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-5 border border-white/10 hover:border-purple-500/50 transition cursor-pointer group">
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="w-10 h-10 rounded-full bg-[#222] flex items-center justify-center text-purple-400 group-hover:scale-110 transition">
+                                    <i class="fas fa-bullseye"></i>
+                                </div>
+                                <span class="text-[10px] text-gray-500">Demo</span>
+                            </div>
+                            <div class="text-sm text-gray-400 mb-1">Revenue target</div>
+                            <div class="text-2xl font-light text-white">$25,000.00</div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Floating User Agent (Simulated Video) -->
+            <div class="absolute bottom-6 right-6 w-48 rounded-lg overflow-hidden shadow-2xl border border-gray-700 bg-black z-50 group">
+                <div class="h-32 overflow-hidden relative">
+                     <!-- Simulating a video feed -->
+                     <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=250&auto=format&fit=crop" class="w-full h-full object-cover opacity-80">
+                     <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                         <button class="w-10 h-10 bg-black/50 rounded-full text-white backdrop-blur-sm hover:bg-white/20 transition"><i class="fas fa-play"></i></button>
+                     </div>
+                </div>
+                <div class="h-8 bg-gray-900 flex items-center px-3 gap-2 border-t border-gray-800">
+                    <div class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
+                    <div class="text-[10px] text-gray-400 font-mono">AGENT_LOGIC_RUN</div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Interactive Scripts -->
+    <script>
+        function toggleVoice() {
+            const btn = document.querySelector('.fa-microphone').parentElement.parentElement;
+            btn.classList.toggle('bg-purple-500/20');
+            const icon = btn.querySelector('i');
+            icon.classList.toggle('text-purple-400');
+            icon.classList.toggle('text-gray-400');
+        }
+
+        function toggleModelSelector() {
+            const el = document.getElementById('modelSelector');
+            el.classList.toggle('hidden');
+        }
+
+        function toggleDetails() {
+            alert("Opening detailed model statistics panel...");
+        }
+
+        // Close selector if clicked elsewhere
+        document.addEventListener('click', function(event) {
+            const selector = document.getElementById('modelSelector');
+            const btn = document.querySelector('.fa-chevron-down').closest('button');
+            
+            if (selector.classList.contains('hidden') || event.target === btn || btn.contains(event.target) || selector.contains(event.target)) {
+                return;
+            }
+            selector.classList.add('hidden');
+        });
+
+        // Add simple hover sound effect simulation (console logs)
+        const links = document.querySelectorAll('a');
+        links.forEach(link => {
+            link.addEventListener('mouseenter', () => {
+                console.log('Hovering agent interface...');
+            })
+        });
+    </script>
+</body>
+</html>
+```

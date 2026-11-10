@@ -1,0 +1,6 @@
+# Optional "pro route" voice engines (offline STT / natural TTS).
+# Install only what you enable in .env.
+numpy>=1.26
+faster-whisper>=1.0      # STT_ENGINE=whisper  (downloads the model on first use)
+vosk>=0.3.45             # STT_ENGINE=vosk     (also set VOSK_MODEL_PATH)
+# TTS>=0.22              # TTS_ENGINE=coqui    (large install; Python <= 3.11)
