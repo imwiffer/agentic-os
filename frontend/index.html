@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agentic OS · Jarvis</title>
+    <title>Agentic OS · Console</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -17,18 +17,21 @@
 </head>
 <body class="h-screen w-screen flex flex-col text-sm" data-status="idle">
 
-    <!-- TOP NAV / BROWSER MOCKUP -->
-    <div class="h-8 bg-[#1e1e1e] border-b border-gray-800 flex items-center px-2 gap-4 text-[10px] text-gray-400 select-none">
-        <div class="flex gap-1.5">
-            <div class="w-2 h-2 rounded-full bg-red-500"></div>
-            <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
-            <div class="w-2 h-2 rounded-full bg-green-500"></div>
+    <!-- NATIVE APP / CONSOLE TITLEBAR -->
+    <div class="h-8 bg-[#141417] border-b border-gray-800 flex items-center px-3 gap-4 text-[10px] text-gray-400 select-none" style="-webkit-app-region: drag">
+        <div class="flex gap-2" style="-webkit-app-region: no-drag">
+            <button id="win-close" title="Close window" class="w-2.5 h-2.5 rounded-full bg-red-500 hover:bg-red-400 transition"></button>
+            <button id="win-min" title="Minimize window" class="w-2.5 h-2.5 rounded-full bg-yellow-500 hover:bg-yellow-400 transition"></button>
+            <button id="win-max" title="Maximize / Fullscreen" class="w-2.5 h-2.5 rounded-full bg-green-500 hover:bg-green-400 transition"></button>
         </div>
-        <div class="flex items-center gap-1 bg-[#1e1e1e] border border-gray-700 rounded px-2 h-5 w-full max-w-md">
-            <i class="fas fa-lock text-[8px] text-emerald-400"></i>
-            <span class="text-gray-500 truncate" id="url-bar">tailnet/AgenticOS</span>
+        <div class="flex items-center gap-1.5 bg-[#1e1e24] border border-gray-700/80 rounded px-2.5 h-5 w-full max-w-md font-mono" style="-webkit-app-region: no-drag">
+            <i class="fas fa-terminal text-[9px] text-emerald-400"></i>
+            <span class="text-gray-300 truncate" id="url-bar">vps://100.120.101.8:11434/AgenticOS/Dashboard</span>
         </div>
-        <div class="ml-auto flex items-center gap-3 pr-2">
+        <div class="ml-auto flex items-center gap-3 pr-1" style="-webkit-app-region: no-drag">
+            <button id="failsafe-pill" class="px-2 py-0.5 rounded bg-emerald-900/30 border border-emerald-500/30 text-emerald-300 font-mono hover:bg-emerald-900/50 transition" title="Toggle Local AirLLM Failsafe">
+                failsafe: armed
+            </button>
             <span id="role-pill" class="px-2 py-0.5 rounded bg-purple-900/40 border border-purple-500/30 text-purple-300 font-mono">jarvis</span>
             <div class="flex items-center gap-1.5" title="Brain connection">
                 <span id="conn-dot" class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
@@ -41,11 +44,11 @@
 
         <!-- SIDEBAR -->
         <aside class="w-48 bg-[#111113] border-r border-[#222] flex flex-col py-4 px-2 z-20">
-            <div class="flex items-center gap-2 px-2 mb-8 text-gray-300">
+            <div class="flex items-center gap-2 px-2 mb-6 text-gray-300">
                 <div class="w-6 h-6 bg-orange-500 rounded text-white flex items-center justify-center font-bold"><i class="fas fa-wind"></i></div>
                 <div>
                     <div class="font-semibold text-xs tracking-wide">Agentic OS</div>
-                    <div class="text-[9px] text-gray-500 uppercase tracking-widest">Tailscale VPS</div>
+                    <div class="text-[9px] text-emerald-400 uppercase tracking-widest font-mono" id="sidebar-sub">VPS + AirLLM</div>
                 </div>
             </div>
 
@@ -57,25 +60,29 @@
                     <span class="flex-1">Inbox</span>
                     <span id="inbox-badge" class="hidden px-1.5 py-0.2 rounded-full text-[10px] bg-purple-600 text-white font-mono">0</span>
                 </a>
-                <a href="#" class="nav-link" data-tab="Chat"><i class="fas fa-comments w-4 text-center"></i> Chat</a>
-                <a href="#" class="nav-link" data-tab="Calendar"><i class="fas fa-calendar w-4 text-center"></i> Calendar</a>
+                <a href="#" class="nav-link" data-tab="Chat"><i class="fas fa-terminal w-4 text-center"></i> Chat & Console</a>
+                <a href="#" class="nav-link" data-tab="Calendar"><i class="fas fa-calendar w-4 text-center"></i> Scheduler</a>
                 <a href="#" class="nav-link" data-tab="Memory"><i class="fas fa-brain w-4 text-center"></i> Memory</a>
             </nav>
 
-            <div class="mt-8 text-xs font-bold text-gray-500 px-2 mb-2 uppercase tracking-wider">Tools</div>
+            <div class="mt-6 text-xs font-bold text-gray-500 px-2 mb-2 uppercase tracking-wider">Tools</div>
             <nav class="flex flex-col gap-1">
-                <a href="#" class="nav-link" data-tab="Design"><i class="fas fa-pen-ruler w-4 text-center"></i> Design</a>
-                <a href="#" class="nav-link" data-tab="Website"><i class="fas fa-globe w-4 text-center"></i> Website</a>
+                <a href="#" class="nav-link" data-tab="Voice"><i class="fas fa-microphone-lines w-4 text-center text-pink-400"></i> Voice Studio</a>
+                <a href="#" class="nav-link" data-tab="IDE"><i class="fas fa-code w-4 text-center text-purple-400"></i> Monaco IDE</a>
+                <a href="#" class="nav-link" data-tab="Extensions"><i class="fas fa-puzzle-piece w-4 text-center text-sky-400"></i> Extensions</a>
+                <a href="#" class="nav-link" data-tab="Design"><i class="fas fa-pen-ruler w-4 text-center"></i> Design Studio</a>
+                <a href="#" class="nav-link" data-tab="Website"><i class="fas fa-globe w-4 text-center"></i> Web Intelligence</a>
                 <a href="#" class="nav-link" data-tab="Agents"><i class="fas fa-robot w-4 text-center"></i> Agents</a>
-                <a href="#" class="nav-link" data-tab="Settings"><i class="fas fa-cog w-4 text-center"></i> Settings</a>
+                <a href="#" class="nav-link" data-tab="Settings"><i class="fas fa-cog w-4 text-center"></i> System & Audit</a>
             </nav>
 
-            <div class="mt-auto pt-4 border-t border-gray-800 px-2 flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500"></div>
-                <div class="flex flex-col min-w-0">
-                    <span class="text-xs font-medium truncate" id="user-name">—</span>
-                    <span class="text-[9px] text-gray-500 truncate" id="user-title">Personal Profile</span>
+            <div id="profile-box" class="mt-auto pt-4 border-t border-gray-800 px-2 flex items-center gap-3 cursor-pointer hover:bg-white/5 rounded-lg p-1.5 transition" title="Click to edit operator profile">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-xs font-bold text-white" id="user-avatar">V</div>
+                <div class="flex flex-col min-w-0 flex-1">
+                    <span class="text-xs font-medium truncate text-gray-200" id="user-name">dj</span>
+                    <span class="text-[9px] text-gray-500 truncate" id="user-title">Operator Profile</span>
                 </div>
+                <i class="fas fa-pen text-[9px] text-gray-600"></i>
             </div>
         </aside>
 
@@ -84,11 +91,14 @@
             <div class="absolute top-0 left-0 w-full h-[500px] bg-purple-900/10 blur-[100px] -z-10 pointer-events-none"></div>
 
             <!-- Header -->
-            <header class="h-14 border-b border-[#222] flex items-center justify-between px-6 shrink-0 sticky top-0 z-40 bg-black/70 backdrop-blur-md">
+            <header class="h-14 border-b border-[#222] flex items-center justify-between px-6 shrink-0 sticky top-0 z-40 bg-black/75 backdrop-blur-md">
                 <div class="flex items-center gap-2 text-sm">
                     <span class="font-semibold text-gray-200" id="header-role">JARVIS</span>
                     <span class="text-gray-500">/</span>
-                    <span class="bg-[#222] px-2 py-0.5 rounded text-gray-300" id="header-location">Local</span>
+                    <button id="header-location-btn" class="bg-[#222] hover:bg-[#333] px-2.5 py-0.5 rounded text-gray-300 text-xs flex items-center gap-1.5 transition" title="Switch Local VPS vs Cloud mode">
+                        <span id="header-location">VPS</span>
+                        <i class="fas fa-repeat text-[9px] text-gray-500"></i>
+                    </button>
                     <span class="text-gray-500">/</span>
                     <span id="agent-status" class="agent-status">Standing by</span>
                 </div>
@@ -98,25 +108,62 @@
                             class="glass-button bg-[#222] border border-[#444] rounded-md text-xs px-2 py-1.5 text-gray-300 outline-none cursor-pointer">
                         <option value="USD">USD</option>
                     </select>
-                    <button id="chat-btn" class="flex items-center gap-2 glass-button px-3 py-1.5 rounded-full text-gray-400 text-xs">
-                        <i class="far fa-comment-alt"></i> Chat
+                    <button id="chat-btn" class="flex items-center gap-2 glass-button px-3 py-1.5 rounded-full text-gray-300 text-xs">
+                        <i class="fas fa-terminal"></i> Console
                     </button>
-                    <button id="voice-btn" class="voice-btn flex items-center gap-2 glass-button px-3 py-1.5 rounded-full text-gray-400 text-xs" title="Toggle voice (Ctrl+Space)">
+                    <button id="voice-btn" class="voice-btn flex items-center gap-2 glass-button px-3 py-1.5 rounded-full text-gray-300 text-xs" title="Toggle voice listening (Ctrl+Space)">
                         <i id="mic-icon" class="fas fa-microphone"></i> <span id="voice-label">Voice</span>
                     </button>
+                    <button id="mute-voice-btn" class="flex items-center gap-1.5 glass-button px-2.5 py-1.5 rounded-full text-xs text-emerald-400 hover:text-white transition border border-emerald-500/30" title="Mute/Unmute Jarvis voice output">
+                        <i id="mute-icon" class="fas fa-volume-high"></i> <span id="mute-label" class="hidden sm:inline">Mute</span>
+                    </button>
                     <div class="h-4 w-[1px] bg-gray-700 mx-1"></div>
-                    <button id="model-button" class="flex items-center gap-2 glass-button px-3 py-1.5 rounded-md text-xs bg-[#222] border border-[#444] w-48 justify-between">
+                    <button id="model-button" class="flex items-center gap-2 glass-button px-3 py-1.5 rounded-md text-xs bg-[#222] border border-[#444] w-56 justify-between">
                         <span id="model-label" class="truncate">Loading models…</span>
                         <i class="fas fa-chevron-down text-[10px] text-gray-500"></i>
                     </button>
-                    <div id="modelSelector" class="absolute top-10 right-0 w-64 glass-panel rounded-md shadow-2xl hidden z-50 overflow-hidden max-h-96 overflow-y-auto">
+                    <div id="modelSelector" class="absolute top-10 right-0 w-72 glass-panel rounded-md shadow-2xl hidden z-50 overflow-hidden max-h-96 overflow-y-auto">
                         <div id="model-list"></div>
                     </div>
                 </div>
             </header>
 
-            <!-- DASHBOARD VIEW -->
+            <!-- ==================== 1. DASHBOARD VIEW ==================== -->
             <div id="view-dashboard" class="p-6 space-y-6 pb-40">
+
+                <!-- JARVIS LIVE WELCOME & TELEMETRY BANNER -->
+                <div id="jarvis-welcome-banner" class="glass-panel rounded-xl p-4 border border-sky-500/30 bg-gradient-to-r from-sky-950/30 via-purple-950/20 to-black/60 flex items-center justify-between gap-4 flex-wrap">
+                    <div class="flex items-center gap-3.5 min-w-0 flex-1">
+                        <div class="orb shrink-0"></div>
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-bold uppercase tracking-widest text-sky-300 font-mono">J.A.R.V.I.S. Neural Telemetry Link</span>
+                                <span id="welcome-vps-pill" class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-950/80 text-emerald-300 border border-emerald-500/30">Node 147.189.168.95 ONLINE</span>
+                                <span id="welcome-gpu-pill" class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-purple-950/80 text-purple-300 border border-purple-500/30">RTX 5070 12GB ARMED</span>
+                                <span id="welcome-voice-pill" class="px-2 py-0.5 rounded-full text-[10px] font-mono bg-pink-950/80 text-pink-300 border border-pink-500/30">Fish Audio s2.1-pro</span>
+                            </div>
+                            <div id="jarvis-welcome-text" class="text-xs text-gray-200 mt-1 leading-relaxed">
+                                Initializing neural link to Ubuntu Server (147.189.168.95:11434) and local RTX 5070 GPU fabric…
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <select id="voice-persona-select" class="glass-button px-2.5 py-1.5 rounded-lg text-xs text-pink-300 font-mono outline-none bg-[#121318]/90 border border-pink-500/30" title="Select Voice Persona">
+                            <option value="14129c3e320149449d6bada6862f7338">🎙️ Jarvis (Classic British)</option>
+                            <option value="88b183bfbdda44a09ad4474712b967f4">🎙️ Jarvis (Cinematic HD)</option>
+                            <option value="05b36da8574341d0803391491850db20">🎙️ Jarvis (Tactical)</option>
+                            <option value="e13fa398a7f445a685316a3de6089ce7">🎙️ Jarvis (Deep)</option>
+                            <option value="90e65eaaf50e4470b8e6d43ee6afd7d5">🎙️ Announcer (Epic)</option>
+                            <option value="">🎙️ Fish Audio Natural</option>
+                        </select>
+                        <button id="welcome-speak-btn" class="glass-button px-3 py-1.5 rounded-lg text-xs text-sky-300 hover:text-white flex items-center gap-1.5" title="Replay Jarvis voice greeting">
+                            <i class="fas fa-volume-high"></i> Speak Greeting
+                        </button>
+                        <button id="welcome-detect-btn" class="glass-button px-3 py-1.5 rounded-lg text-xs text-emerald-300 hover:text-white flex items-center gap-1.5" title="Re-detect GPU/CPU specs and ping VPS">
+                            <i class="fas fa-microchip"></i> Auto-Detect Specs
+                        </button>
+                    </div>
+                </div>
 
                 <!-- Top Stats Row -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -124,96 +171,166 @@
 
                     <!-- AI Models small panel -->
                     <div class="glass-panel rounded-xl p-2 flex flex-col h-32 relative overflow-hidden border border-purple-500/30">
-                        <div class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase mb-2 flex items-center gap-1">
-                            <i class="fas fa-star text-[8px] text-yellow-500"></i> AI Models
+                        <div class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase mb-1 flex items-center justify-between">
+                            <span class="flex items-center gap-1"><i class="fas fa-star text-[8px] text-yellow-500"></i> AI Engine</span>
+                            <span class="text-[10px] font-mono text-emerald-400" id="small-vps-badge">100.120.101.8:11434</span>
                         </div>
-                        <div class="flex items-center justify-between pl-2 pr-3">
-                            <div>
-                                <div class="text-lg font-medium" id="panel-model-location">Local</div>
-                                <div class="text-xs text-green-400 bg-green-900/30 px-1.5 rounded py-0.5 inline-block" id="panel-model-name">—</div>
-                                <div class="text-xs text-gray-500 mt-1" id="panel-model-host">On VPS</div>
+                        <div class="flex items-center justify-between pl-3 pr-3">
+                            <div class="min-w-0">
+                                <div class="text-base font-medium text-white truncate" id="panel-model-location">VPS Ollama</div>
+                                <div class="text-xs text-green-400 bg-green-900/30 px-1.5 rounded py-0.5 inline-block truncate max-w-[180px]" id="panel-model-name">qwen2.5:0.5b</div>
+                                <div class="text-[10px] text-gray-400 mt-0.5 truncate" id="panel-model-host">Failsafe: RTX 5070 Armed</div>
                             </div>
-                            <div class="w-12 h-12 rounded-full border border-gray-600 overflow-hidden relative">
-                                <img src="https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=200&auto=format&fit=crop" class="w-full h-full object-cover" alt="">
+                            <div class="w-11 h-11 rounded-full border border-purple-500/40 bg-purple-950/40 flex items-center justify-center text-purple-300 shrink-0">
+                                <i class="fas fa-server"></i>
                             </div>
                         </div>
-                        <div class="mt-auto px-3 py-2 flex gap-2">
+                        <div class="mt-auto px-3 py-1.5 flex gap-2">
                             <button class="mode-btn flex-1 rounded py-1 text-[10px] text-center" data-mode="cloud">Cloud</button>
-                            <button class="mode-btn flex-1 rounded py-1 text-[10px] text-center" data-mode="local">Local</button>
+                            <button class="mode-btn flex-1 rounded py-1 text-[10px] text-center" data-mode="local">VPS / Local</button>
+                            <button id="add-model-small-btn" title="Add or pull a model" class="w-6 h-6 rounded bg-white/10 flex items-center justify-center hover:bg-purple-600 text-gray-200 transition"><i class="fas fa-plus text-[10px]"></i></button>
                         </div>
                     </div>
                 </div>
 
                 <!-- MAIN AI MODELS SECTION -->
-                <section id="ai-models-section" class="glass-panel rounded-2xl overflow-hidden min-h-[300px] relative border border-purple-500/20 shadow-2xl shadow-purple-900/10">
-                    <div class="absolute top-0 left-0 right-0 p-4 bg-black/60 backdrop-blur-md z-10 flex justify-between items-start border-b border-white/5">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-medium text-gray-300 flex items-center gap-1"><i class="fas fa-star text-xs text-purple-400"></i> AI Models</span>
-                            <button id="details-btn" class="text-[10px] text-gray-400 hover:text-white flex items-center gap-1 px-2 py-1 rounded hover:bg-white/10"><i class="fas fa-list-ul"></i> Details</button>
+                <section id="ai-models-section" class="glass-panel rounded-2xl overflow-hidden min-h-[320px] relative border border-purple-500/20 shadow-2xl shadow-purple-900/10">
+                    <div class="absolute top-0 left-0 right-0 p-4 bg-black/60 backdrop-blur-md z-10 flex justify-between items-center border-b border-white/5">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-medium text-gray-300 flex items-center gap-1"><i class="fas fa-star text-xs text-purple-400"></i> AI Models & Routing</span>
+                            <button id="details-btn" class="text-[10px] text-gray-300 hover:text-white flex items-center gap-1 px-2.5 py-1 rounded bg-white/5 hover:bg-white/15 transition"><i class="fas fa-list-ul"></i> Details</button>
+                            <span class="text-[10px] font-mono text-gray-400" id="engine-label">engine: vps-ollama</span>
                         </div>
-                        <div class="text-[10px] font-mono text-gray-500" id="engine-label">engine: —</div>
+                        <div class="flex items-center gap-2">
+                            <button id="add-model-btn" class="glass-button px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider text-purple-200 hover:text-white border border-purple-500/30">
+                                <i class="fas fa-plus mr-1"></i> Add / Pull Model
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="absolute top-16 left-4 bottom-4 w-64 bg-black/40 backdrop-blur-xl rounded-xl border border-white/10 p-4 z-20 text-xs">
-                        <div class="flex gap-2 mb-4">
+                    <div class="absolute top-16 left-4 bottom-4 w-64 bg-black/50 backdrop-blur-xl rounded-xl border border-white/10 p-4 z-20 text-xs flex flex-col">
+                        <div class="flex gap-2 mb-3">
                             <button class="mode-btn flex-1 py-1.5 rounded text-[11px]" data-mode="cloud">Cloud</button>
-                            <button class="mode-btn flex-1 py-1.5 rounded text-[11px]" data-mode="local">Local</button>
+                            <button class="mode-btn flex-1 py-1.5 rounded text-[11px]" data-mode="local">VPS + Failsafe</button>
                         </div>
                         <div>
-                            <div class="text-[10px] text-gray-500 uppercase mb-1">Connectors</div>
-                            <div class="flex gap-2">
-                                <div class="glass-button px-3 py-1 rounded-full text-[10px] flex items-center gap-2" id="connector-status">
+                            <div class="text-[10px] text-gray-500 uppercase mb-1">Connectors & Gate</div>
+                            <div class="flex gap-1.5 flex-wrap">
+                                <div class="glass-button px-2.5 py-1 rounded-full text-[10px] flex items-center gap-1.5 cursor-pointer" id="connector-status" title="Click to refresh connectors">
                                     <div class="w-1.5 h-1.5 rounded-full bg-red-500"></div> Off
                                 </div>
-                                <div class="glass-button px-3 py-1 rounded-full text-[10px] text-gray-400" id="stt-label">STT: browser</div>
+                                <button id="lock-mode-btn" class="glass-button px-2.5 py-1 rounded-full text-[10px] text-amber-300 hover:text-white font-mono" title="Click to cycle Tool Execution Policy (auto / confirm / readonly)">
+                                    mode: auto
+                                </button>
+                                <div class="glass-button px-2.5 py-1 rounded-full text-[10px] text-gray-400" id="stt-label">STT: browser</div>
                             </div>
                         </div>
-                        <div class="mt-6 pt-4 border-t border-white/10">
-                            <div class="mb-2 text-[11px] text-gray-300 font-medium"><span id="answer-model">—</span> answers</div>
-                            <div class="mb-2 text-[11px] text-gray-300 font-medium">Jarvis runs the tools</div>
-                            <hr class="border-white/10 my-2">
-                            <div class="space-y-2 text-[10px] text-gray-400" id="tool-list">
-                                <div class="flex justify-between"><span><i class="fas fa-table-columns w-4"></i> open_tab</span><span data-tool-count="openTab">0</span></div>
-                                <div class="flex justify-between"><span><i class="fas fa-wallet w-4"></i> check_balance</span><span data-tool-count="checkBalance">0</span></div>
-                                <div class="flex justify-between"><span><i class="fas fa-chart-line w-4"></i> get_income</span><span data-tool-count="getIncome">0</span></div>
-                                <div class="flex justify-between"><span><i class="fas fa-coins w-4"></i> set_currency</span><span data-tool-count="setCurrency">0</span></div>
-                                <div class="flex justify-between"><span><i class="fas fa-arrows-up-down w-4"></i> scroll_page</span><span data-tool-count="scrollPage">0</span></div>
+                        <div class="mt-3 pt-3 border-t border-white/10 flex-1 overflow-y-auto no-scrollbar">
+                            <div class="mb-1 text-[11px] text-gray-300 font-medium truncate"><span id="answer-model">qwen2.5-coder:7b</span> answers</div>
+                            <div class="mb-2 text-[10px] text-gray-400">ReAct tool execution counters:</div>
+                            <div class="space-y-1.5 text-[10px] text-gray-400 font-mono" id="tool-list">
+                                <div class="flex justify-between hover:text-white cursor-pointer" data-quick-cmd="open Finances"><span><i class="fas fa-table-columns w-4"></i> open_tab</span><span data-tool-count="openTab">0</span></div>
+                                <div class="flex justify-between hover:text-white cursor-pointer" data-quick-cmd="check my balance"><span><i class="fas fa-wallet w-4"></i> check_balance</span><span data-tool-count="checkBalance">0</span></div>
+                                <div class="flex justify-between hover:text-white cursor-pointer" data-quick-cmd="what is my monthly income"><span><i class="fas fa-chart-line w-4"></i> get_income</span><span data-tool-count="getIncome">0</span></div>
+                                <div class="flex justify-between hover:text-white cursor-pointer" data-quick-cmd="check server health"><span><i class="fas fa-server w-4"></i> system_status</span><span data-tool-count="system_status">0</span></div>
+                                <div class="flex justify-between hover:text-white cursor-pointer" data-quick-cmd="list workspace files"><span><i class="fas fa-folder-open w-4"></i> list_files</span><span data-tool-count="list_files">0</span></div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="absolute right-0 top-16 bottom-4 left-64 bg-black/20 backdrop-blur-sm border-l border-white/5 flex items-center justify-center overflow-hidden">
+                    <div class="absolute right-0 top-16 bottom-4 left-72 bg-black/20 backdrop-blur-sm border-l border-white/5 flex items-center justify-center overflow-hidden">
                         <div class="absolute inset-0 galaxy-bg">
                             <div class="nebula"></div>
                             <div class="ribbon"></div>
                             <div class="ribbon ribbon-2"></div>
                             <div class="scanline"></div>
                         </div>
-                        <div class="z-10 glass-panel px-3 py-1 rounded text-[10px] border-l-2 border-l-purple-500 font-mono">
-                            Your data: +<span id="token-counter">0</span> tokens processed
+
+                        <!-- Live Telemetry Drawer (toggled by Details button) -->
+                        <div id="engine-details-drawer" class="hidden absolute inset-3 bg-black/85 backdrop-blur-xl rounded-xl border border-purple-500/30 p-4 z-30 overflow-y-auto text-xs space-y-3">
+                            <div class="flex items-center justify-between border-b border-white/10 pb-2">
+                                <span class="font-semibold text-purple-300 uppercase tracking-wider text-[11px]">Live Engine & Connector Telemetry</span>
+                                <button id="close-details-btn" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2" id="details-connector-grid"></div>
+                            <div class="flex items-center gap-2 pt-2 border-t border-white/10">
+                                <span class="text-[11px] text-gray-400">VPS Ollama URL:</span>
+                                <input id="details-ollama-url" class="flex-1 bg-[#141417] border border-gray-700 rounded px-2 py-1 text-xs font-mono text-gray-200" value="http://100.120.101.8:11434">
+                                <button id="save-ollama-url-btn" class="bg-purple-600 hover:bg-purple-500 text-white px-3 py-1 rounded text-xs">Save & Ping</button>
+                            </div>
                         </div>
-                        <div class="absolute bottom-4 left-4 flex gap-3">
-                            <div class="flex flex-col items-center text-[10px] text-gray-400"><i class="fas fa-shield-halved text-emerald-400"></i><span>Tailscale</span></div>
-                            <div class="flex flex-col items-center text-[10px] text-gray-400"><i class="fas fa-microchip text-sky-400"></i><span>Ollama</span></div>
-                            <div class="flex flex-col items-center text-[10px] text-gray-400"><i class="fas fa-cloud text-purple-500"></i><span>OpenRouter</span></div>
-                            <div class="flex flex-col items-center text-[10px] text-gray-400"><i class="fas fa-database text-amber-400"></i><span>SQLite WAL</span></div>
+
+                        <div class="z-10 flex flex-col items-center gap-3 w-full max-w-2xl px-6">
+                            <div class="glass-panel px-4 py-2 rounded-lg text-xs border-l-2 border-l-purple-500 font-mono flex items-center gap-3 flex-wrap justify-center">
+                                <span>Processed: +<span id="token-counter">0</span> tokens</span>
+                                <span class="text-gray-600">|</span>
+                                <span id="live-endpoint-pill" class="text-emerald-400">VPS 100.120.101.8:11434</span>
+                                <span class="text-gray-600">|</span>
+                                <span id="live-latency-pill" class="text-sky-300">ping: --ms</span>
+                            </div>
+
+                            <!-- Live VPS & LLM/API Activity Matrix -->
+                            <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-2.5 text-[11px] font-mono">
+                                <div class="bg-black/65 backdrop-blur-md border border-emerald-500/30 rounded-xl p-3 space-y-1">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-emerald-300 font-semibold"><i class="fas fa-server mr-1"></i> VPS Ollama Node</span>
+                                        <span id="matrix-vps-status" class="px-1.5 py-0.5 rounded text-[9px] bg-emerald-900/50 text-emerald-300">ONLINE</span>
+                                    </div>
+                                    <div id="matrix-vps-model" class="text-white truncate">Model: qwen2.5:0.5b (CPU Auto · 397MB)</div>
+                                    <div id="matrix-vps-host" class="text-[10px] text-gray-400 truncate">Host: 100.120.101.8:11434 (Tailscale)</div>
+                                </div>
+                                <div class="bg-black/65 backdrop-blur-md border border-purple-500/30 rounded-xl p-3 space-y-1">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-purple-300 font-semibold"><i class="fas fa-bolt mr-1"></i> Main PC GPU Bridge</span>
+                                        <span id="matrix-gpu-status" class="px-1.5 py-0.5 rounded text-[9px] bg-purple-900/50 text-purple-300">RTX 5070</span>
+                                    </div>
+                                    <div id="matrix-gpu-model" class="text-white truncate">Local: Qwen2.5-Coder-7B (Cached on Disk)</div>
+                                    <div id="matrix-gpu-spec" class="text-[10px] text-gray-400 truncate">VRAM: 11.9 GB · Ryzen 7 7800X3D · 31.6 GB RAM</div>
+                                </div>
+                            </div>
+
+                            <!-- Live Recent VPS / Tool / API Activity Stream -->
+                            <div id="vps-activity-feed" class="w-full bg-black/60 backdrop-blur-md border border-white/10 rounded-xl px-3 py-2 text-[10px] font-mono text-gray-300 space-y-1 max-h-24 overflow-y-auto no-scrollbar">
+                                <div class="text-gray-500">Waiting for live VPS & LLM activity telemetry…</div>
+                            </div>
+                        </div>
+
+                        <!-- Bottom Connectors Row (Live clickable) -->
+                        <div id="connector-row" class="absolute bottom-3 left-4 right-20 flex gap-4 overflow-x-auto no-scrollbar"></div>
+
+                        <!-- Right Lock / Policy Toggle -->
+                        <div class="absolute bottom-3 right-4 flex gap-3 text-gray-300">
+                            <button id="floating-lock-btn" class="flex flex-col items-center gap-1 text-[10px] group" title="Click to toggle Tool Security Gate (auto / confirm / readonly)">
+                                <div class="w-8 h-8 rounded-full glass-button flex items-center justify-center text-emerald-400 group-hover:bg-purple-600 group-hover:text-white transition">
+                                    <i id="floating-lock-icon" class="fas fa-unlock"></i>
+                                </div>
+                                <span id="floating-lock-label" class="font-mono uppercase">AUTO</span>
+                            </button>
                         </div>
                     </div>
                 </section>
 
                 <!-- Your Business In Focus -->
                 <section id="business-section">
-                    <div class="flex items-end justify-between mb-6">
+                    <div class="flex items-end justify-between mb-6 flex-wrap gap-3">
                         <div>
-                            <div class="text-xs text-gray-500 font-bold tracking-widest mb-1">YOUR BUSINESS, IN FOCUS</div>
+                            <div class="text-xs text-gray-500 font-bold tracking-widest mb-1">YOUR BENCH & TELEMETRY, IN FOCUS</div>
                             <h2 class="text-3xl text-white font-medium">Room to grow.</h2>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs text-gray-500 italic" id="data-source">Waiting for data…</span>
-                            <div class="w-2 h-2 rounded-full bg-gray-600" id="data-dot"></div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-xs text-gray-400 italic" id="data-source">Live from SQLite</span>
+                            <div class="w-2 h-2 rounded-full bg-green-500" id="data-dot"></div>
+                            <button id="sync-live-btn" class="flex items-center gap-2 ml-2 border border-emerald-500/30 rounded-md px-3 py-1.5 bg-emerald-950/30 hover:bg-emerald-900/50 text-emerald-300 text-xs transition" title="Sync real agent executions, CPU/RAM load, and memory counts into cards">
+                                <i class="fas fa-bolt text-xs"></i>
+                                <span>Sync Live Telemetry</span>
+                            </button>
+                            <button id="edit-finance-btn" class="flex items-center gap-2 border border-white/10 rounded-md px-3 py-1.5 bg-white/5 hover:bg-white/15 text-gray-200 text-xs transition" title="Edit financial figures or add custom metric cards">
+                                <i class="fas fa-sliders text-purple-400 text-xs"></i>
+                                <span>Edit Figures / Cards</span>
+                            </button>
                         </div>
                     </div>
-                    <div class="flex gap-2 mb-8" id="business-tabs">
+                    <div class="flex gap-2 mb-6" id="business-tabs">
                         <button class="btab" data-btab="Overview">Overview</button>
                         <button class="btab" data-btab="Finances">Finances</button>
                         <button class="btab" data-btab="Progress">Progress</button>
@@ -223,7 +340,7 @@
                 </section>
             </div>
 
-            <!-- INBOX VIEW -->
+            <!-- ==================== 2. INBOX VIEW ==================== -->
             <div id="view-inbox" class="hidden p-6 space-y-4 pb-40">
                 <div class="flex items-center justify-between">
                     <div>
@@ -237,7 +354,69 @@
                 <div id="inbox-list" class="space-y-3"></div>
             </div>
 
-            <!-- CALENDAR / SCHEDULER VIEW -->
+            <!-- ==================== 3. CHAT & CONSOLE VIEW ==================== -->
+            <div id="view-chat" class="hidden p-6 space-y-6 pb-40">
+                <div class="flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                        <div class="text-xs text-gray-500 font-bold tracking-widest uppercase">Interactive ReAct Agent · PowerShell Console · Workspace Files</div>
+                        <h2 class="text-2xl text-white font-medium">Command & Console Center</h2>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="chat-clear-btn" class="glass-button px-3 py-1.5 rounded text-xs text-gray-300 hover:text-white">
+                            <i class="fas fa-broom mr-1"></i> Clear Chat History
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Left: Full Agentic Chat -->
+                    <div class="glass-panel rounded-xl flex flex-col h-[520px] border border-purple-500/30 overflow-hidden">
+                        <div class="px-4 py-3 border-b border-white/10 flex items-center justify-between bg-black/40">
+                            <span class="text-xs font-semibold text-purple-300 uppercase tracking-wider"><i class="fas fa-comments mr-1.5"></i> Agent Conversation (<span id="chat-view-role">jarvis</span>)</span>
+                            <span class="text-[11px] font-mono text-emerald-400" id="chat-view-model">qwen2.5-coder:7b</span>
+                        </div>
+                        <div id="chat-view-log" class="flex-1 overflow-y-auto p-4 space-y-3 font-mono text-xs"></div>
+                        <form id="chat-view-form" class="flex border-t border-white/10 bg-black/60">
+                            <input id="chat-view-input" autocomplete="off" placeholder="Message the agent (runs tools, edits files, checks VPS)…" class="flex-1 bg-transparent px-4 py-3 text-xs outline-none text-white">
+                            <button class="bg-purple-600 hover:bg-purple-500 text-white px-5 text-xs font-semibold transition">Send</button>
+                        </form>
+                    </div>
+
+                    <!-- Right: Real Interactive PowerShell / System Console -->
+                    <div class="glass-panel rounded-xl flex flex-col h-[520px] border border-emerald-500/30 overflow-hidden">
+                        <div class="px-4 py-3 border-b border-white/10 flex items-center justify-between bg-black/40">
+                            <span class="text-xs font-semibold text-emerald-300 uppercase tracking-wider"><i class="fas fa-terminal mr-1.5"></i> Live PowerShell Console</span>
+                            <span class="text-[10px] font-mono text-gray-400 truncate max-w-[240px]" id="console-cwd-label">workspace</span>
+                        </div>
+                        <pre id="console-output" class="flex-1 overflow-y-auto p-4 font-mono text-xs text-emerald-200/90 bg-black/80 whitespace-pre-wrap"></pre>
+                        <form id="console-form" class="flex items-center border-t border-white/10 bg-[#0d1117] px-3">
+                            <span class="text-emerald-400 font-mono text-xs mr-2">PS ❯</span>
+                            <input id="console-input" autocomplete="off" spellcheck="false" placeholder="Run any PowerShell command (e.g. Get-Process, dir, tailscale status)…" class="flex-1 bg-transparent py-3 text-xs font-mono outline-none text-white">
+                            <button class="text-emerald-400 hover:text-white px-3 py-1 text-xs font-mono">Run</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Workspace File Manager -->
+                <div class="glass-panel rounded-xl p-4 border border-white/10 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-gray-300 uppercase tracking-wider"><i class="fas fa-folder-tree mr-1.5 text-amber-400"></i> Agent Workspace Files</span>
+                        <button id="refresh-files-btn" class="glass-button px-2.5 py-1 rounded text-xs text-gray-300"><i class="fas fa-rotate mr-1"></i> Refresh</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div id="workspace-file-list" class="bg-black/50 border border-white/5 rounded-lg p-2 max-h-60 overflow-y-auto font-mono text-xs space-y-1"></div>
+                        <div class="md:col-span-2 flex flex-col gap-2">
+                            <div class="flex gap-2">
+                                <input id="workspace-file-path" placeholder="filename.txt or script.py" class="flex-1 bg-[#141417] border border-gray-700 rounded px-3 py-1.5 text-xs font-mono outline-none">
+                                <button id="save-file-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded text-xs font-medium"><i class="fas fa-floppy-disk mr-1"></i> Save File</button>
+                            </div>
+                            <textarea id="workspace-file-content" rows="7" placeholder="Select a file on the left or type content to create a new file in workspace/…" class="w-full bg-[#0d1117] border border-gray-800 rounded-lg p-3 text-xs font-mono text-gray-200 outline-none"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== 4. CALENDAR / SCHEDULER VIEW ==================== -->
             <div id="view-calendar" class="hidden p-6 space-y-6 pb-40">
                 <div>
                     <div class="text-xs text-gray-500 font-bold tracking-widest uppercase">24/7 Background Automation</div>
@@ -280,7 +459,7 @@
                 <div id="job-list" class="space-y-2"></div>
             </div>
 
-            <!-- MEMORY VIEW -->
+            <!-- ==================== 5. MEMORY VIEW ==================== -->
             <div id="view-memory" class="hidden p-6 space-y-6 pb-40">
                 <div class="flex items-center justify-between gap-4 flex-wrap">
                     <div>
@@ -297,7 +476,89 @@
                 <div id="memory-list" class="space-y-2"></div>
             </div>
 
-            <!-- AGENTS VIEW -->
+            <!-- ==================== 6. DESIGN STUDIO VIEW ==================== -->
+            <div id="view-design" class="hidden p-6 space-y-6 pb-40">
+                <div class="flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                        <div class="text-xs text-gray-500 font-bold tracking-widest uppercase">Live Theme Engine & AI Component Builder</div>
+                        <h2 class="text-2xl text-white font-medium">Design Studio</h2>
+                    </div>
+                    <button id="design-reset-btn" class="glass-button px-3 py-1.5 rounded text-xs text-gray-300">Reset Default Theme</button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="glass-panel rounded-xl p-4 space-y-3">
+                        <div class="text-xs font-semibold text-gray-300 uppercase">Accent & Glow Theme</div>
+                        <div class="flex gap-2 flex-wrap">
+                            <button data-theme-color="#8b5cf6" class="px-3 py-1.5 rounded bg-purple-600 text-white text-xs">Nebula Purple</button>
+                            <button data-theme-color="#10b981" class="px-3 py-1.5 rounded bg-emerald-600 text-white text-xs">Matrix Emerald</button>
+                            <button data-theme-color="#0ea5e9" class="px-3 py-1.5 rounded bg-sky-600 text-white text-xs">Arc Reactor Sky</button>
+                            <button data-theme-color="#f59e0b" class="px-3 py-1.5 rounded bg-amber-600 text-white text-xs">Solar Amber</button>
+                            <button data-theme-color="#ec4899" class="px-3 py-1.5 rounded bg-pink-600 text-white text-xs">Cyber Pink</button>
+                        </div>
+                    </div>
+                    <div class="glass-panel rounded-xl p-4 space-y-3">
+                        <div class="text-xs font-semibold text-gray-300 uppercase">Glass Blur & Density</div>
+                        <input id="design-blur-range" type="range" min="4" max="28" value="14" class="w-full accent-purple-500">
+                        <div class="flex justify-between text-[11px] text-gray-400 font-mono"><span>Crisp (4px)</span><span id="design-blur-val">14px</span><span>Deep Frosted (28px)</span></div>
+                    </div>
+                    <div class="glass-panel rounded-xl p-4 space-y-3">
+                        <div class="text-xs font-semibold text-gray-300 uppercase">HUD & Voice Feedback</div>
+                        <div class="flex gap-2">
+                            <button id="design-toggle-hud" class="flex-1 glass-button py-1.5 rounded text-xs text-gray-200">Toggle HUD Dock</button>
+                            <button id="design-test-tts" class="flex-1 glass-button py-1.5 rounded text-xs text-purple-300">Test Voice Synthesis</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Component Sandbox -->
+                <div class="glass-panel rounded-xl p-4 space-y-3 border border-purple-500/20">
+                    <div class="text-xs font-semibold text-purple-300 uppercase">AI UI Component Generator (Powered by VPS Ollama)</div>
+                    <form id="design-gen-form" class="flex gap-2">
+                        <input id="design-gen-prompt" required placeholder="Describe a widget or card (e.g. 'Create a dark glassmorphism GPU temperature monitor card with Tailwind CSS')…" class="flex-1 bg-[#141417] border border-gray-700 rounded px-3 py-2 text-xs outline-none">
+                        <button class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded text-xs font-semibold">Generate & Preview</button>
+                    </form>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
+                        <textarea id="design-gen-code" rows="10" placeholder="Generated HTML/Tailwind code appears here — edit live to update the preview…" class="w-full bg-[#0d1117] border border-gray-800 rounded-lg p-3 text-xs font-mono text-gray-200 outline-none"></textarea>
+                        <div id="design-gen-preview" class="glass-panel rounded-lg p-4 min-h-[220px] flex items-center justify-center text-gray-500 text-xs overflow-auto">Live component preview</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== 7. WEBSITE / WEB INTELLIGENCE VIEW ==================== -->
+            <div id="view-website" class="hidden p-6 space-y-6 pb-40">
+                <div>
+                    <div class="text-xs text-gray-500 font-bold tracking-widest uppercase">Live Web Search · SSRF-Guarded Scraper · Knowledge Ingestion</div>
+                    <h2 class="text-2xl text-white font-medium">Web Intelligence & Scraper</h2>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Live Web Search -->
+                    <div class="glass-panel rounded-xl p-4 space-y-3">
+                        <div class="text-xs font-semibold text-sky-300 uppercase"><i class="fas fa-magnifying-glass mr-1.5"></i> Live Web Search</div>
+                        <form id="web-search-form" class="flex gap-2">
+                            <input id="web-search-input" required placeholder="Search the live web (DuckDuckGo / Brave)…" class="flex-1 bg-[#141417] border border-gray-700 rounded px-3 py-2 text-xs outline-none">
+                            <button class="bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded text-xs font-semibold">Search</button>
+                        </form>
+                        <pre id="web-search-results" class="bg-black/60 border border-white/5 rounded-lg p-3 text-xs font-mono text-gray-300 max-h-96 overflow-y-auto whitespace-pre-wrap">Enter a query above to search.</pre>
+                    </div>
+
+                    <!-- Live URL Fetch / Reader -->
+                    <div class="glass-panel rounded-xl p-4 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-pink-300 uppercase"><i class="fas fa-file-code mr-1.5"></i> URL Scraper & Reader</span>
+                            <button id="web-save-memory-btn" class="glass-button px-2.5 py-1 rounded text-[11px] text-purple-300"><i class="fas fa-brain mr-1"></i> Save Content to Memory</button>
+                        </div>
+                        <form id="web-fetch-form" class="flex gap-2">
+                            <input id="web-fetch-input" required placeholder="https://example.com" class="flex-1 bg-[#141417] border border-gray-700 rounded px-3 py-2 text-xs font-mono outline-none">
+                            <button class="bg-pink-600 hover:bg-pink-500 text-white px-4 py-2 rounded text-xs font-semibold">Scrape URL</button>
+                        </form>
+                        <pre id="web-fetch-results" class="bg-black/60 border border-white/5 rounded-lg p-3 text-xs font-mono text-gray-300 max-h-96 overflow-y-auto whitespace-pre-wrap">Enter any public HTTPS URL above to extract readable text.</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== 8. AGENTS VIEW ==================== -->
             <div id="view-agents" class="hidden p-6 space-y-6 pb-40">
                 <div>
                     <div class="text-xs text-gray-500 font-bold tracking-widest uppercase">Specialist Personas & Live Tool Trace</div>
@@ -310,7 +571,7 @@
                 </div>
             </div>
 
-            <!-- SETTINGS / VPS HEALTH & AUDIT VIEW -->
+            <!-- ==================== 9. SETTINGS / VPS HEALTH & AUDIT VIEW ==================== -->
             <div id="view-settings" class="hidden p-6 space-y-6 pb-40">
                 <div class="flex items-center justify-between">
                     <div>
@@ -325,18 +586,295 @@
                 <div class="glass-panel rounded-xl p-4">
                     <div class="flex items-center justify-between mb-3">
                         <span class="text-xs font-semibold text-gray-300 uppercase tracking-wider">Append-Only Tool Audit Log</span>
-                        <span id="tool-mode-badge" class="text-[11px] font-mono px-2 py-0.5 rounded bg-amber-900/40 text-amber-300">mode: confirm</span>
+                        <button id="tool-mode-badge" class="text-[11px] font-mono px-2.5 py-0.5 rounded bg-amber-900/40 text-amber-300 hover:bg-amber-800/50 transition" title="Click to cycle tool mode">mode: auto</button>
                     </div>
                     <div id="audit-list" class="space-y-1.5 font-mono text-[11px] max-h-96 overflow-y-auto"></div>
                 </div>
             </div>
 
-            <!-- GENERIC VIEW (Chat / Design / Website) -->
-            <div id="view-generic" class="hidden flex-1 p-6">
-                <div class="glass-panel rounded-2xl p-10 h-full min-h-[400px] flex flex-col items-center justify-center text-center gap-3">
-                    <i id="generic-icon" class="fas fa-layer-group text-4xl text-purple-400"></i>
-                    <h2 id="generic-title" class="text-2xl text-white font-medium">Section</h2>
-                    <p class="text-gray-400 max-w-md">Use the J.A.R.V.I.S. HUD in the bottom-right corner or press <span class="text-purple-300 font-mono">Ctrl+Space</span> to talk to any specialist agent.</p>
+            <!-- ==================== 10. MONACO WORKBENCH / IDE VIEW ==================== -->
+            <div id="view-ide" class="hidden p-6 space-y-4 pb-32">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-xs text-purple-400 font-bold tracking-widest uppercase">Monaco Code Workbench · Local RTX 5070 GPU Bridge (:7777)</div>
+                        <h2 class="text-2xl text-white font-medium">Monaco IDE</h2>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="ide-open-external" class="glass-button px-3 py-1.5 rounded text-xs text-gray-300 hover:text-white" onclick="window.open('http://127.0.0.1:7777', '_blank')">
+                            <i class="fas fa-external-link-alt mr-1"></i> Open Popout
+                        </button>
+                        <button id="ide-reload-frame" class="glass-button px-3 py-1.5 rounded text-xs text-gray-300 hover:text-white">
+                            <i class="fas fa-rotate mr-1"></i> Reload
+                        </button>
+                    </div>
+                </div>
+                <div class="glass-panel rounded-xl overflow-hidden border border-white/10 h-[calc(100vh-210px)] relative">
+                    <iframe id="ide-frame" src="http://127.0.0.1:7777" class="w-full h-full border-0 bg-[#0e0e12]" title="Monaco IDE"></iframe>
+                    <div id="ide-fallback-card" class="hidden absolute inset-0 bg-[#0e0e12]/95 backdrop-blur-md flex flex-col items-center justify-center p-8 text-center space-y-4">
+                        <div class="w-14 h-14 rounded-2xl bg-purple-900/40 border border-purple-500/40 flex items-center justify-center text-purple-300 text-2xl">
+                            <i class="fas fa-code"></i>
+                        </div>
+                        <div class="max-w-md">
+                            <h3 class="text-lg font-semibold text-white mb-1">Local Monaco IDE Bridge (:7777)</h3>
+                            <p class="text-xs text-gray-400">The Vanta AirLLM Monaco editor service can be started on demand or runs automatically when launching <span class="font-mono text-purple-300">AgenticOS.exe</span>.</p>
+                        </div>
+                        <button id="ide-start-bridge" class="bg-purple-600 hover:bg-purple-500 text-white px-5 py-2 rounded-lg text-xs font-semibold shadow-lg shadow-purple-600/30 transition">
+                            <i class="fas fa-play mr-1.5"></i> Launch IDE Engine (:7777)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== 11. OPENVSX EXTENSIONS & TOKEN OPTIMIZER ==================== -->
+            <div id="view-extensions" class="hidden p-6 space-y-6 pb-32">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-xs text-sky-400 font-bold tracking-widest uppercase">OpenVSX Registry · Native Plugin System · 5-Layer Token Optimizer</div>
+                        <h2 class="text-2xl text-white font-medium">Extensions & Token Optimizer</h2>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="token-saved-badge" class="px-3 py-1 rounded-full text-xs font-mono bg-emerald-950/80 text-emerald-300 border border-emerald-500/30">
+                            <i class="fas fa-bolt mr-1"></i> 0 tokens saved
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Token Optimization Telemetry Matrix -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="glass-panel rounded-xl p-4 border border-emerald-500/20">
+                        <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Tokens Saved</div>
+                        <div class="text-2xl font-light text-emerald-400 font-mono" id="stat-tokens-saved">0</div>
+                        <div class="text-[10px] text-gray-500 mt-1">Intent tool filter + caching</div>
+                    </div>
+                    <div class="glass-panel rounded-xl p-4 border border-sky-500/20">
+                        <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Zero-Token Hits</div>
+                        <div class="text-2xl font-light text-sky-400 font-mono" id="stat-zero-hits">0</div>
+                        <div class="text-[10px] text-gray-500 mt-1">&lt;5ms instant deterministic execution</div>
+                    </div>
+                    <div class="glass-panel rounded-xl p-4 border border-purple-500/20">
+                        <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">KV / Cache Hits</div>
+                        <div class="text-2xl font-light text-purple-400 font-mono" id="stat-cache-hits">0</div>
+                        <div class="text-[10px] text-gray-500 mt-1">TTL response caching</div>
+                    </div>
+                    <div class="glass-panel rounded-xl p-4 border border-amber-500/20">
+                        <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Tools Pruned</div>
+                        <div class="text-2xl font-light text-amber-400 font-mono" id="stat-tools-pruned">0</div>
+                        <div class="text-[10px] text-gray-500 mt-1">~70% prompt overhead cut</div>
+                    </div>
+                </div>
+
+                <!-- Extensions Search & List -->
+                <div class="glass-panel rounded-xl p-5 space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="relative flex-1">
+                            <i class="fas fa-search absolute left-3 top-3 text-xs text-gray-500"></i>
+                            <input id="ext-search-input" type="text" placeholder="Search OpenVSX for themes, languages, snippets (e.g. dracula, python, rust, github)…"
+                                   class="w-full bg-[#121318] border border-gray-700 rounded-lg pl-9 pr-4 py-2 text-xs text-gray-200 outline-none focus:border-purple-500">
+                        </div>
+                        <button id="ext-search-btn" class="glass-button px-4 py-2 rounded-lg text-xs text-purple-300 font-medium">Search OpenVSX</button>
+                    </div>
+
+                    <div>
+                        <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Available Extensions</div>
+                        <div id="ext-results-grid" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div class="text-xs text-gray-500 py-4 col-span-3 text-center">Type a query above to search OpenVSX.</div>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-gray-800">
+                        <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Installed Extensions & Plugins</div>
+                        <div id="ext-installed-list" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="p-3 rounded-lg bg-black/40 border border-white/10 flex items-center justify-between">
+                                <div class="flex items-center gap-2.5">
+                                    <i class="fas fa-code text-purple-400"></i>
+                                    <div>
+                                        <div class="text-xs font-medium text-white">Monaco Workbench Native Engine</div>
+                                        <div class="text-[10px] text-gray-400">Builtin Core Editor · Multi-language support</div>
+                                    </div>
+                                </div>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-purple-900/40 text-purple-300">ACTIVE</span>
+                            </div>
+                            <div class="p-3 rounded-lg bg-black/40 border border-white/10 flex items-center justify-between">
+                                <div class="flex items-center gap-2.5">
+                                    <i class="fas fa-bolt text-emerald-400"></i>
+                                    <div>
+                                        <div class="text-xs font-medium text-white">AirLLM Python Bridge Plugin</div>
+                                        <div class="text-[10px] text-gray-400">RTX 5070 GPU Acceleration · Local Cache</div>
+                                    </div>
+                                </div>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-900/40 text-emerald-300">ACTIVE</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== 12. VOICE STUDIO / PERSONA MANAGER ==================== -->
+            <div id="view-voice" class="hidden p-6 space-y-6 pb-32">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-xs text-pink-400 font-bold tracking-widest uppercase">Fish Audio Neural Voice Studio · Real-Time TTS & Personas</div>
+                        <h2 class="text-2xl text-white font-medium">Voice Studio</h2>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="voice-active-badge" class="px-3 py-1 rounded-full text-xs font-mono bg-pink-950/80 text-pink-300 border border-pink-500/30">
+                            <i class="fas fa-wave-square mr-1"></i> Fish Audio s2.1-pro-free
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Voice Delivery & Verbosity Mode -->
+                <div class="glass-panel rounded-xl p-4 border border-pink-500/20 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Speech Delivery</div>
+                        <div class="text-xs text-emerald-400 font-semibold mb-1">Casual & Concise (Anti-Ramble)</div>
+                        <div class="text-[11px] text-gray-400 mb-2">Restricts voice output to 1-2 punchy sentences. Never recites tables or raw logs.</div>
+                        <button id="studio-mute-btn" class="glass-button px-2.5 py-1 rounded text-xs text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 transition">
+                            <i id="studio-mute-icon" class="fas fa-volume-high"></i> <span id="studio-mute-label">Assistant Sound: Active</span>
+                        </button>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Active Model</div>
+                        <div class="text-xs text-white font-mono" id="voice-model-disp">s2.1-pro-free</div>
+                        <div class="text-[11px] text-gray-400">Zero-latency neural streaming with natural inflection.</div>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Active Persona</div>
+                        <div class="text-xs text-purple-300 font-semibold" id="voice-persona-disp">J.A.R.V.I.S. (Classic British)</div>
+                        <div class="text-[11px] text-gray-400 font-mono text-[10px]" id="voice-persona-id-disp">14129c3e320149449d6bada6862f7338</div>
+                    </div>
+                </div>
+
+                <!-- Curated Voice Persona Cards -->
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Select Voice Persona</span>
+                        <span class="text-[11px] text-gray-500">Click any persona to audition or activate immediately</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="voice-cards-grid">
+                        <!-- Card 1 -->
+                        <div class="glass-panel rounded-xl p-4 border border-purple-500/40 hover:border-pink-500/60 transition cursor-pointer flex flex-col justify-between h-44 relative group persona-card" data-voice-id="14129c3e320149449d6bada6862f7338" data-voice-name="J.A.R.V.I.S. (Classic British)">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="w-8 h-8 rounded-lg bg-purple-900/50 flex items-center justify-center text-purple-300"><i class="fas fa-crown text-xs"></i></span>
+                                    <span class="px-2 py-0.5 rounded text-[9px] font-mono bg-purple-900/40 text-purple-300 persona-active-pill">ACTIVE</span>
+                                </div>
+                                <h3 class="text-sm font-semibold text-white">J.A.R.V.I.S. (Classic British)</h3>
+                                <p class="text-[11px] text-gray-400 mt-1">Refined, composed British butler persona. Calm, measured, authentic.</p>
+                            </div>
+                            <div class="flex items-center justify-between pt-2 border-t border-white/5">
+                                <button class="btn-audition px-2.5 py-1 rounded text-[10px] font-mono bg-white/5 hover:bg-white/10 text-gray-300" data-id="14129c3e320149449d6bada6862f7338"><i class="fas fa-play mr-1"></i> Audition</button>
+                                <button class="btn-activate px-2.5 py-1 rounded text-[10px] font-semibold bg-pink-600 hover:bg-pink-500 text-white" data-id="14129c3e320149449d6bada6862f7338" data-name="J.A.R.V.I.S. (Classic British)">Set Active</button>
+                            </div>
+                        </div>
+
+                        <!-- Card 2 -->
+                        <div class="glass-panel rounded-xl p-4 border border-white/10 hover:border-pink-500/60 transition cursor-pointer flex flex-col justify-between h-44 relative group persona-card" data-voice-id="88b183bfbdda44a09ad4474712b967f4" data-voice-name="J.A.R.V.I.S. (Cinematic HD)">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="w-8 h-8 rounded-lg bg-sky-900/50 flex items-center justify-center text-sky-300"><i class="fas fa-film text-xs"></i></span>
+                                    <span class="px-2 py-0.5 rounded text-[9px] font-mono bg-gray-800 text-gray-400 persona-active-pill">SELECTABLE</span>
+                                </div>
+                                <h3 class="text-sm font-semibold text-white">J.A.R.V.I.S. (Cinematic HD)</h3>
+                                <p class="text-[11px] text-gray-400 mt-1">High-definition studio presence. Deeper resonance with sharp cinematic clarity.</p>
+                            </div>
+                            <div class="flex items-center justify-between pt-2 border-t border-white/5">
+                                <button class="btn-audition px-2.5 py-1 rounded text-[10px] font-mono bg-white/5 hover:bg-white/10 text-gray-300" data-id="88b183bfbdda44a09ad4474712b967f4"><i class="fas fa-play mr-1"></i> Audition</button>
+                                <button class="btn-activate px-2.5 py-1 rounded text-[10px] font-semibold bg-gray-700 hover:bg-pink-600 text-white" data-id="88b183bfbdda44a09ad4474712b967f4" data-name="J.A.R.V.I.S. (Cinematic HD)">Set Active</button>
+                            </div>
+                        </div>
+
+                        <!-- Card 3 -->
+                        <div class="glass-panel rounded-xl p-4 border border-white/10 hover:border-pink-500/60 transition cursor-pointer flex flex-col justify-between h-44 relative group persona-card" data-voice-id="05b36da8574341d0803391491850db20" data-voice-name="J.A.R.V.I.S. (Tactical)">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="w-8 h-8 rounded-lg bg-emerald-900/50 flex items-center justify-center text-emerald-300"><i class="fas fa-crosshairs text-xs"></i></span>
+                                    <span class="px-2 py-0.5 rounded text-[9px] font-mono bg-gray-800 text-gray-400 persona-active-pill">SELECTABLE</span>
+                                </div>
+                                <h3 class="text-sm font-semibold text-white">J.A.R.V.I.S. (Tactical)</h3>
+                                <p class="text-[11px] text-gray-400 mt-1">Direct, low-latency military/tactical operator. Swift, concise status reads.</p>
+                            </div>
+                            <div class="flex items-center justify-between pt-2 border-t border-white/5">
+                                <button class="btn-audition px-2.5 py-1 rounded text-[10px] font-mono bg-white/5 hover:bg-white/10 text-gray-300" data-id="05b36da8574341d0803391491850db20"><i class="fas fa-play mr-1"></i> Audition</button>
+                                <button class="btn-activate px-2.5 py-1 rounded text-[10px] font-semibold bg-gray-700 hover:bg-pink-600 text-white" data-id="05b36da8574341d0803391491850db20" data-name="J.A.R.V.I.S. (Tactical)">Set Active</button>
+                            </div>
+                        </div>
+
+                        <!-- Card 4 -->
+                        <div class="glass-panel rounded-xl p-4 border border-white/10 hover:border-pink-500/60 transition cursor-pointer flex flex-col justify-between h-44 relative group persona-card" data-voice-id="e13fa398a7f445a685316a3de6089ce7" data-voice-name="J.A.R.V.I.S. (Deep Assistant)">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="w-8 h-8 rounded-lg bg-purple-900/50 flex items-center justify-center text-purple-300"><i class="fas fa-shield-alt text-xs"></i></span>
+                                    <span class="px-2 py-0.5 rounded text-[9px] font-mono bg-gray-800 text-gray-400 persona-active-pill">SELECTABLE</span>
+                                </div>
+                                <h3 class="text-sm font-semibold text-white">J.A.R.V.I.S. (Deep Assistant)</h3>
+                                <p class="text-[11px] text-gray-400 mt-1">Warm baritone delivery. Reassuring, authoritative and attentive.</p>
+                            </div>
+                            <div class="flex items-center justify-between pt-2 border-t border-white/5">
+                                <button class="btn-audition px-2.5 py-1 rounded text-[10px] font-mono bg-white/5 hover:bg-white/10 text-gray-300" data-id="e13fa398a7f445a685316a3de6089ce7"><i class="fas fa-play mr-1"></i> Audition</button>
+                                <button class="btn-activate px-2.5 py-1 rounded text-[10px] font-semibold bg-gray-700 hover:bg-pink-600 text-white" data-id="e13fa398a7f445a685316a3de6089ce7" data-name="J.A.R.V.I.S. (Deep Assistant)">Set Active</button>
+                            </div>
+                        </div>
+
+                        <!-- Card 5 -->
+                        <div class="glass-panel rounded-xl p-4 border border-white/10 hover:border-pink-500/60 transition cursor-pointer flex flex-col justify-between h-44 relative group persona-card" data-voice-id="90e65eaaf50e4470b8e6d43ee6afd7d5" data-voice-name="Announcer (Epic / Powerful)">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="w-8 h-8 rounded-lg bg-amber-900/50 flex items-center justify-center text-amber-300"><i class="fas fa-bullhorn text-xs"></i></span>
+                                    <span class="px-2 py-0.5 rounded text-[9px] font-mono bg-gray-800 text-gray-400 persona-active-pill">SELECTABLE</span>
+                                </div>
+                                <h3 class="text-sm font-semibold text-white">Announcer (Epic / Powerful)</h3>
+                                <p class="text-[11px] text-gray-400 mt-1">Smash Bros. style thunderous announcer. High energy command delivery.</p>
+                            </div>
+                            <div class="flex items-center justify-between pt-2 border-t border-white/5">
+                                <button class="btn-audition px-2.5 py-1 rounded text-[10px] font-mono bg-white/5 hover:bg-white/10 text-gray-300" data-id="90e65eaaf50e4470b8e6d43ee6afd7d5"><i class="fas fa-play mr-1"></i> Audition</button>
+                                <button class="btn-activate px-2.5 py-1 rounded text-[10px] font-semibold bg-gray-700 hover:bg-pink-600 text-white" data-id="90e65eaaf50e4470b8e6d43ee6afd7d5" data-name="Announcer (Epic / Powerful)">Set Active</button>
+                            </div>
+                        </div>
+
+                        <!-- Card 6 -->
+                        <div class="glass-panel rounded-xl p-4 border border-white/10 hover:border-pink-500/60 transition cursor-pointer flex flex-col justify-between h-44 relative group persona-card" data-voice-id="" data-voice-name="Fish Audio Natural">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="w-8 h-8 rounded-lg bg-pink-900/50 flex items-center justify-center text-pink-300"><i class="fas fa-wand-magic-sparkles text-xs"></i></span>
+                                    <span class="px-2 py-0.5 rounded text-[9px] font-mono bg-gray-800 text-gray-400 persona-active-pill">SELECTABLE</span>
+                                </div>
+                                <h3 class="text-sm font-semibold text-white">Fish Audio Natural</h3>
+                                <p class="text-[11px] text-gray-400 mt-1">Default unconditioned neural base voice. Pure neutral English.</p>
+                            </div>
+                            <div class="flex items-center justify-between pt-2 border-t border-white/5">
+                                <button class="btn-audition px-2.5 py-1 rounded text-[10px] font-mono bg-white/5 hover:bg-white/10 text-gray-300" data-id=""><i class="fas fa-play mr-1"></i> Audition</button>
+                                <button class="btn-activate px-2.5 py-1 rounded text-[10px] font-semibold bg-gray-700 hover:bg-pink-600 text-white" data-id="" data-name="Fish Audio Natural">Set Active</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Voice ID & Live Audition Sandbox -->
+                <div class="glass-panel rounded-xl p-5 space-y-4">
+                    <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Custom Voice Model / Clone ID</div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div class="md:col-span-2">
+                            <input id="custom-voice-id" type="text" placeholder="Paste any Fish Audio Model ID (e.g. 14129c3e320149449d6bada6862f7338)…"
+                                   class="w-full bg-[#121318] border border-gray-700 rounded-lg px-3 py-2 text-xs font-mono text-gray-200 outline-none focus:border-pink-500">
+                        </div>
+                        <div class="flex gap-2">
+                            <button id="apply-custom-voice-btn" class="flex-1 bg-pink-600 hover:bg-pink-500 text-white rounded-lg px-3 py-2 text-xs font-semibold transition">
+                                <i class="fas fa-check mr-1"></i> Activate ID
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-gray-800">
+                        <div class="text-[11px] text-gray-400 mb-2">Audition Phrase (Test Voice)</div>
+                        <div class="flex gap-2">
+                            <input id="audition-phrase" type="text" value="Systems online, dj. What are we building today?"
+                                   class="flex-1 bg-[#121318] border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 outline-none focus:border-pink-500">
+                            <button id="play-audition-btn" class="glass-button px-4 py-2 rounded-lg text-xs text-pink-300 hover:text-white font-medium flex items-center gap-1.5">
+                                <i class="fas fa-volume-high"></i> Speak Test
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -346,6 +884,77 @@
     <div id="thinking-overlay" class="glass-panel rounded-full px-4 py-2 flex items-center gap-3 text-xs text-gray-200">
         <span class="dots"><span></span><span></span><span></span></span>
         <span id="thinking-text">Analyzing…</span>
+    </div>
+
+    <!-- ADD / PULL MODEL MODAL -->
+    <div id="add-model-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <form id="add-model-form" class="glass-panel rounded-2xl max-w-md w-full p-6 border border-purple-500/40 space-y-4">
+            <div class="flex items-center justify-between">
+                <div class="text-base font-semibold text-white">Add or Pull LLM Model</div>
+                <button type="button" id="add-model-close" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+            <div>
+                <label class="text-[10px] text-gray-400 uppercase">Model ID / Tag</label>
+                <input id="new-model-id" required placeholder="e.g. qwen2.5-coder:14b or deepseek-r1:8b" class="w-full mt-1 bg-[#141417] border border-gray-700 rounded px-3 py-2 text-xs font-mono outline-none">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="text-[10px] text-gray-400 uppercase">Display Name</label>
+                    <input id="new-model-name" placeholder="Qwen 2.5 Coder 14B" class="w-full mt-1 bg-[#141417] border border-gray-700 rounded px-3 py-2 text-xs outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] text-gray-400 uppercase">Location</label>
+                    <select id="new-model-location" class="w-full mt-1 bg-[#141417] border border-gray-700 rounded px-2 py-2 text-xs outline-none">
+                        <option value="local">VPS Ollama (Local)</option>
+                        <option value="cloud">OpenAI / OpenRouter Cloud</option>
+                    </select>
+                </div>
+            </div>
+            <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
+                <input id="new-model-pull" type="checkbox" checked class="accent-purple-500">
+                Pull model onto Ubuntu Ollama (`147.189.168.95:11434`) now
+            </label>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" id="add-model-cancel" class="glass-button px-4 py-2 rounded-lg text-xs text-gray-300">Cancel</button>
+                <button class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg text-xs font-semibold">Save Model</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- EDIT FINANCE & METRICS MODAL -->
+    <div id="edit-finance-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <form id="edit-finance-form" class="glass-panel rounded-2xl max-w-lg w-full p-6 border border-emerald-500/40 space-y-4">
+            <div class="flex items-center justify-between">
+                <div class="text-base font-semibold text-white">Edit Financial & Telemetry Figures (SQLite)</div>
+                <button type="button" id="edit-finance-close" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="text-[10px] text-gray-400 uppercase">Cash on Hand (USD)</label>
+                    <input id="fin-cash" type="number" step="0.01" required class="w-full mt-1 bg-[#141417] border border-gray-700 rounded px-3 py-2 text-xs font-mono outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] text-gray-400 uppercase">Monthly Income (USD)</label>
+                    <input id="fin-income" type="number" step="0.01" required class="w-full mt-1 bg-[#141417] border border-gray-700 rounded px-3 py-2 text-xs font-mono outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] text-gray-400 uppercase">Monthly Expenses (USD)</label>
+                    <input id="fin-expenses" type="number" step="0.01" required class="w-full mt-1 bg-[#141417] border border-gray-700 rounded px-3 py-2 text-xs font-mono outline-none">
+                </div>
+                <div>
+                    <label class="text-[10px] text-gray-400 uppercase">Revenue MTD (USD)</label>
+                    <input id="fin-revenue" type="number" step="0.01" required class="w-full mt-1 bg-[#141417] border border-gray-700 rounded px-3 py-2 text-xs font-mono outline-none">
+                </div>
+                <div class="col-span-2">
+                    <label class="text-[10px] text-gray-400 uppercase">Revenue Target (USD)</label>
+                    <input id="fin-target" type="number" step="0.01" required class="w-full mt-1 bg-[#141417] border border-gray-700 rounded px-3 py-2 text-xs font-mono outline-none">
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" id="edit-finance-cancel" class="glass-button px-4 py-2 rounded-lg text-xs text-gray-300">Cancel</button>
+                <button class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-semibold">Save to SQLite</button>
+            </div>
+        </form>
     </div>
 
     <!-- TOOL APPROVAL MODAL -->
@@ -393,6 +1002,7 @@
                 <div class="text-xs font-semibold tracking-widest text-sky-300">J.A.R.V.I.S.</div>
                 <div class="text-[10px] text-gray-400 font-mono truncate" id="hud-status">AGENT_LOGIC_IDLE</div>
             </div>
+            <button id="hud-mute-btn" class="text-emerald-400 hover:text-white text-xs px-1.5" title="Mute/Unmute speech output"><i class="fas fa-volume-high" id="hud-mute-icon"></i></button>
             <button id="hud-toggle" class="text-gray-500 hover:text-white text-xs px-1"><i class="fas fa-chevron-down"></i></button>
         </div>
         <div id="hud-body">

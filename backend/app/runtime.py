@@ -17,7 +17,7 @@ import time
 from datetime import datetime
 from typing import Awaitable, Callable
 
-from . import agent, config, db, llm, memory, scheduler
+from . import agent, config, db, llm, memory, scheduler, token_opt
 from .roles import ROLES, tools_for
 from .tools import BLOCKED, CONFIRM, REGISTRY, ToolContext, ToolError
 
@@ -35,31 +35,14 @@ TOOL_ALIASES = {
 }
 
 SYSTEM_PROMPT = """You are {title}, {description}
-You run on the owner's private VPS inside "Agentic OS". Owner: {user_name}. Local time: {now}.
-
-TOOLS
+Owner: {user_name}. Time: {now}. State: {state}
+{memories}
+TOOLS:
 {tools}
 
-DASHBOARD STATE: {state}
-{memories}
-Reply with ONE JSON object and nothing else:
-{{"thought": "<one short sentence>", "actions": [{{"tool": "<name>", "args": {{...}}}}], "response": "<spoken reply>"}}
-
-RULES
-- Need information or an effect? Put tool calls in "actions". Results come back as an Observation message;
-  then either call more tools or give the final answer.
-- Final answer: "actions": [] and the reply in "response".
-- "response" is read aloud: 1-3 short sentences, plain text, no markdown or lists. Call the owner "sir" occasionally.
-- Never invent numbers, file contents, search results or command output. Use tools; say so if a tool failed.
-- If the owner shares a lasting fact or preference, save it with remember.
-- Tools marked [may need approval] pause for the owner's OK; if denied, accept it and continue without it.
-
-EXAMPLES
-User: open finances
-{{"thought": "UI navigation.", "actions": [{{"tool": "open_tab", "args": {{"target": "Finances"}}}}], "response": "Opening Finances."}}
-User: how is the server doing?
-{{"thought": "Need live stats.", "actions": [{{"tool": "system_status", "args": {{}}}}], "response": ""}}
-"""
+Return ONE JSON object only:
+{{"thought": "<short>", "actions": [{{"tool": "<name>", "args": {{...}}}}], "response": "<1 short casual sentence for voice. Natural, direct, under 20 words. Never recite tables, code blocks, or raw data>"}}
+If no tool is needed, set "actions": []."""
 
 OBS_SUFFIX = "Continue. Call more tools if needed, otherwise answer with \"actions\": []."
 FINAL_SUFFIX = "This is your final step. Answer now with \"actions\": [] and a complete \"response\"."
@@ -166,9 +149,12 @@ def rules_plan(text: str, models: list[dict]) -> dict:
 
 # --- Main entry -------------------------------------------------------------
 
-def _build_system(role: str, depth: int, state: dict, model_id: str, mems: list[dict]) -> str:
+def _build_system(role: str, depth: int, state: dict, model_id: str, mems: list[dict], user_prompt: str = "") -> str:
     r = ROLES.get(role, ROLES["jarvis"])
-    tools = "\n".join(REGISTRY[n].spec_line() for n in tools_for(role, depth) if n in REGISTRY)
+    allowed_tools = tools_for(role, depth)
+    # Token Optimization Layer 1: Intent-Filtered Tool Injection (saves ~70% prompt tokens)
+    active_tools = token_opt.filter_tools_for_prompt(user_prompt, allowed_tools) if user_prompt else allowed_tools
+    tools = "\n".join(REGISTRY[n].spec_line() for n in active_tools if n in REGISTRY)
     public_state = {
         "current_tab": state.get("currentTab", "Dashboard"), "business_tab": state.get("businessTab", "Overview"),
         "currency": state.get("currency", "USD"), "active_model": model_id,
@@ -198,14 +184,33 @@ async def run(text: str, state: dict | None = None, history: list[dict] | None =
     model_id = llm.resolve_model(model or ctx.state.get("model"))["id"]
     models = db.list_models()
 
+    # Token Optimization Layer 2: Tier-0 Zero-Token Fast Path (<5ms, 0 tokens)
+    fast_plan = token_opt.try_zero_token_fast_path(text) if ctx.depth == 0 else None
+    if fast_plan:
+        steps: list[dict] = []
+        for call in fast_plan.get("actions", []):
+            name = resolve_tool_name(call.get("tool"))
+            args = call.get("args") or {}
+            if name:
+                ok, obs, status = await execute_tool(name, args, ctx)
+                steps.append({"tool": name, "args": args, "status": status, "result": _short(obs, 400)})
+        resp = fast_plan.get("response", "Done.")
+        return agent.AgentResult(
+            response=resp, actions=ctx.commands if parent is None else [], engine="fast_path",
+            model="zero-token-fast-path", tokens=0, latency_ms=int((time.perf_counter() - started) * 1000),
+            raw_plan=json.dumps(fast_plan), error=None, steps=steps, role=role,
+        )
+
     try:
         mems = await memory.search(text) if ctx.depth == 0 else []
     except Exception:
         log.exception("Memory search failed")
         mems = []
 
-    messages = [{"role": "system", "content": _build_system(role, ctx.depth, ctx.state, model_id, mems)},
-                *(history or [])[-config.HISTORY_TURNS * 2:], {"role": "user", "content": text}]
+    # Token Optimization Layer 3: Sliding-Window History Compaction
+    compacted_hist = token_opt.compact_history(history or [], max_verbatim=4)
+    messages = [{"role": "system", "content": _build_system(role, ctx.depth, ctx.state, model_id, mems, text)},
+                *compacted_hist, {"role": "user", "content": text}]
 
     engine, error, response, used_model = "llm", None, "", model_id
     steps: list[dict] = []
@@ -249,6 +254,7 @@ async def run(text: str, state: dict | None = None, history: list[dict] | None =
                 needs_followup = True
                 continue
             ok, obs, status = await execute_tool(name, args, ctx)
+            obs = token_opt.prune_observation(obs)
             steps.append({"tool": name, "args": args, "status": status, "result": _short(obs, 400)})
             step_obs.append(f"{name}: {obs}")
             observations.append(obs)

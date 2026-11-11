@@ -128,6 +128,7 @@ class Scheduler:
             self._task = None
 
     async def _loop(self) -> None:
+        await asyncio.sleep(config.SCHEDULER_TICK)
         while True:
             try:
                 await self.tick()

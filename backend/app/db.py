@@ -121,12 +121,14 @@ BEGIN SELECT RAISE(ABORT, 'audit_log is append-only'); END;
 """
 
 SEED_MODELS = [
+    ("qwen2.5-coder:7b", "Qwen 2.5 Coder 7B (VPS)", "ollama", "local", "7B", 0),
     ("qwen2.5:7b-instruct", "Qwen 2.5 7B", "ollama", "local", "7B", 1),
     ("llama3.1:8b", "Llama 3.1 8B", "ollama", "local", "8B", 2),
     ("llama3.2:3b", "Llama 3.2 3B", "ollama", "local", "3B", 3),
-    ("qwen/qwen-2.5-72b-instruct", "Qwen 2.5 72B", "openai-compatible", "cloud", "72B", 4),
-    ("meta-llama/llama-3.1-70b-instruct", "Llama 3.1 70B", "openai-compatible", "cloud", "70B", 5),
-    ("mistralai/mistral-large", "Mistral Large", "openai-compatible", "cloud", "123B", 6),
+    ("criscar22/Qwen2.5-Coder-7B-Instruct-abliterated", "Qwen 2.5 Coder 7B (AirLLM Failsafe)", "airllm", "local", "7B", 4),
+    ("qwen/qwen-2.5-72b-instruct", "Qwen 2.5 72B", "openai-compatible", "cloud", "72B", 5),
+    ("meta-llama/llama-3.1-70b-instruct", "Llama 3.1 70B", "openai-compatible", "cloud", "70B", 6),
+    ("mistralai/mistral-large", "Mistral Large", "openai-compatible", "cloud", "123B", 7),
 ]
 # Too big / non-existent for a CPU VPS; removed from the registry on start-up.
 DEPRECATED_MODELS = ("qwen3.8:27b", "llama3:8b", "mistral:7b")
@@ -192,6 +194,15 @@ def get_user(user_id: int = 1) -> dict:
     return dict(row) if row else {}
 
 
+def update_user(name: str, title: str = "Operator Profile", email: str = "", user_id: int = 1) -> dict:
+    with connect() as c:
+        c.execute(
+            "UPDATE users SET name = ?, title = ?, email = COALESCE(NULLIF(?, ''), email) WHERE id = ?",
+            (name.strip() or "dj", title.strip() or "Operator Profile", email.strip(), user_id),
+        )
+    return get_user(user_id)
+
+
 def get_finance(user_id: int = 1) -> dict:
     with connect() as c:
         row = c.execute(
@@ -200,10 +211,81 @@ def get_finance(user_id: int = 1) -> dict:
     return dict(row) if row else {}
 
 
+def update_finance(
+    cash_on_hand: float | None = None,
+    monthly_income: float | None = None,
+    monthly_expenses: float | None = None,
+    revenue: float | None = None,
+    revenue_target: float | None = None,
+    base_currency: str | None = None,
+    user_id: int = 1,
+) -> dict:
+    cur = get_finance(user_id)
+    if not cur:
+        return {}
+    new_vals = {
+        "cash_on_hand": float(cash_on_hand if cash_on_hand is not None else cur["cash_on_hand"]),
+        "monthly_income": float(monthly_income if monthly_income is not None else cur["monthly_income"]),
+        "monthly_expenses": float(monthly_expenses if monthly_expenses is not None else cur["monthly_expenses"]),
+        "revenue": float(revenue if revenue is not None else cur["revenue"]),
+        "revenue_target": float(revenue_target if revenue_target is not None else cur["revenue_target"]),
+        "base_currency": (base_currency or cur.get("base_currency") or "USD").upper(),
+    }
+    with connect() as c:
+        c.execute(
+            """UPDATE finance
+               SET cash_on_hand = ?, monthly_income = ?, monthly_expenses = ?,
+                   revenue = ?, revenue_target = ?, base_currency = ?,
+                   updated_at = CURRENT_TIMESTAMP
+               WHERE id = ?""",
+            (
+                new_vals["cash_on_hand"],
+                new_vals["monthly_income"],
+                new_vals["monthly_expenses"],
+                new_vals["revenue"],
+                new_vals["revenue_target"],
+                new_vals["base_currency"],
+                cur["id"],
+            ),
+        )
+    return get_finance(user_id)
+
+
 def get_metrics() -> list[dict]:
     with connect() as c:
         rows = c.execute("SELECT * FROM metrics ORDER BY tab, sort").fetchall()
     return [dict(r) for r in rows]
+
+
+def upsert_metric(
+    tab: str,
+    key: str,
+    label: str,
+    value: float,
+    fmt: str = "number",
+    icon: str = "fas fa-chart-simple",
+    color: str = "purple",
+    sort: int = 10,
+) -> dict:
+    with connect() as c:
+        existing = c.execute("SELECT id FROM metrics WHERE key = ?", (key,)).fetchone()
+        if existing:
+            c.execute(
+                "UPDATE metrics SET tab = ?, label = ?, value = ?, format = ?, icon = ?, color = ? WHERE id = ?",
+                (tab, label, float(value), fmt, icon, color, existing["id"]),
+            )
+        else:
+            c.execute(
+                "INSERT INTO metrics (tab, key, label, value, format, icon, color, sort) VALUES (?,?,?,?,?,?,?,?)",
+                (tab, key, label, float(value), fmt, icon, color, sort),
+            )
+        row = c.execute("SELECT * FROM metrics WHERE key = ?", (key,)).fetchone()
+    return dict(row) if row else {}
+
+
+def delete_metric(key: str) -> bool:
+    with connect() as c:
+        return c.execute("DELETE FROM metrics WHERE key = ?", (key,)).rowcount > 0
 
 
 def get_usage() -> list[dict]:
@@ -211,9 +293,60 @@ def get_usage() -> list[dict]:
         return [dict(r) for r in c.execute("SELECT * FROM usage ORDER BY id").fetchall()]
 
 
+def upsert_usage(uid: str, label: str, percent: float, image: str = "") -> dict:
+    with connect() as c:
+        existing = c.execute("SELECT image FROM usage WHERE id = ?", (uid,)).fetchone()
+        img = image or (existing["image"] if existing else "https://images.unsplash.com/photo-1614728853970-00e10288011a?q=80&w=256&auto=format&fit=crop")
+        c.execute(
+            "INSERT INTO usage (id, label, percent, image) VALUES (?,?,?,?) "
+            "ON CONFLICT(id) DO UPDATE SET label = excluded.label, percent = excluded.percent, image = excluded.image",
+            (uid, label, max(0.0, min(100.0, float(percent))), img),
+        )
+        row = c.execute("SELECT * FROM usage WHERE id = ?", (uid,)).fetchone()
+    return dict(row) if row else {}
+
+
 def list_models() -> list[dict]:
     with connect() as c:
         return [dict(r) for r in c.execute("SELECT * FROM models ORDER BY sort").fetchall()]
+
+
+def add_model(model_id: str, name: str, provider: str = "ollama", location: str = "local", size: str = "") -> dict:
+    with connect() as c:
+        c.execute(
+            "INSERT INTO models (id, name, provider, location, size, sort) VALUES (?,?,?,?,?,10) "
+            "ON CONFLICT(id) DO UPDATE SET name = excluded.name, provider = excluded.provider, "
+            "location = excluded.location, size = excluded.size",
+            (model_id.strip(), name.strip() or model_id.strip(), provider, location, size),
+        )
+        row = c.execute("SELECT * FROM models WHERE id = ?", (model_id.strip(),)).fetchone()
+    return dict(row) if row else {}
+
+
+def delete_model(model_id: str) -> bool:
+    with connect() as c:
+        return c.execute("DELETE FROM models WHERE id = ?", (model_id,)).rowcount > 0
+
+
+def clear_messages(conversation_id: str = "default") -> None:
+    with connect() as c:
+        c.execute("DELETE FROM messages WHERE conversation_id = ?", (conversation_id,))
+
+
+def live_telemetry_counts() -> dict:
+    with connect() as c:
+        audit_total = c.execute("SELECT COUNT(*) FROM audit_log").fetchone()[0]
+        audit_ok = c.execute("SELECT COUNT(*) FROM audit_log WHERE ok = 1").fetchone()[0]
+        msg_total = c.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
+        mem_total = c.execute("SELECT COUNT(*) FROM memories").fetchone()[0]
+        job_total = c.execute("SELECT COUNT(*) FROM jobs").fetchone()[0]
+    return {
+        "audit_total": audit_total,
+        "audit_ok": audit_ok,
+        "messages": msg_total,
+        "memories": mem_total,
+        "jobs": job_total,
+    }
 
 
 def get_model(model_id: str) -> dict | None:

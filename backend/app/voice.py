@@ -37,6 +37,8 @@ def available_stt_engines() -> list[str]:
 
 def available_tts_engines() -> list[str]:
     engines = ["browser"]
+    if config.FISH_AUDIO_API_KEY:
+        engines.append("fishaudio")
     if config.ELEVENLABS_API_KEY:
         engines.append("elevenlabs")
     if _has("TTS"):
@@ -107,11 +109,32 @@ class TTS:
 
     @property
     def mime(self) -> str:
-        return "audio/mpeg" if self.engine == "elevenlabs" else "audio/wav"
+        return "audio/mpeg" if self.engine in ("fishaudio", "elevenlabs") else "audio/wav"
 
     async def stream(self, text: str) -> AsyncIterator[bytes]:
         """Yield audio chunks as soon as they are produced."""
-        if self.engine == "elevenlabs":
+        if self.engine == "fishaudio":
+            url = f"{config.FISH_AUDIO_BASE_URL}/v1/tts"
+            payload: dict = {
+                "text": text,
+                "format": "mp3",
+                "latency": "normal",
+                "streaming": True,
+            }
+            if config.FISH_AUDIO_VOICE_ID:
+                payload["reference_id"] = config.FISH_AUDIO_VOICE_ID
+            headers = {
+                "Authorization": f"Bearer {config.FISH_AUDIO_API_KEY}",
+                "Content-Type": "application/json",
+                "Accept": "audio/mpeg",
+                "model": config.FISH_AUDIO_MODEL,
+            }
+            async with httpx.AsyncClient(timeout=30) as client:
+                async with client.stream("POST", url, headers=headers, json=payload) as r:
+                    r.raise_for_status()
+                    async for chunk in r.aiter_bytes(16384):
+                        yield chunk
+        elif self.engine == "elevenlabs":
             url = (f"https://api.elevenlabs.io/v1/text-to-speech/{config.ELEVENLABS_VOICE_ID}/stream"
                    "?output_format=mp3_44100_128")
             async with httpx.AsyncClient(timeout=30) as client:

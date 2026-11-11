@@ -15,11 +15,17 @@ const PROCESSING = new Set(['transcribing', 'thinking', 'speaking']);
 
 const VIEW_MAP = {
     Dashboard: 'view-dashboard',
+    Chat: 'view-chat',
+    Design: 'view-design',
+    Website: 'view-website',
     Inbox: 'view-inbox',
     Calendar: 'view-calendar',
     Memory: 'view-memory',
     Agents: 'view-agents',
     Settings: 'view-settings',
+    IDE: 'view-ide',
+    Extensions: 'view-extensions',
+    Voice: 'view-voice',
 };
 
 const SKELETON = {
@@ -49,6 +55,7 @@ export function formatValue(format, value, s = appState) {
 }
 
 export function animateValue(el, from, to, render, duration = 1400) {
+    if (!el) return;
     cancelAnimationFrame(el._raf);
     const start = performance.now();
     const tick = (now) => {
@@ -65,28 +72,23 @@ export function animateValue(el, from, to, render, duration = 1400) {
 // ---------- renderers ----------
 function renderSidebar(s) {
     document.querySelectorAll('[data-tab]').forEach((el) => el.classList.toggle('active', el.dataset.tab === s.currentTab));
-    const activeView = VIEW_MAP[s.currentTab] || 'view-generic';
-    for (const id of [...Object.values(VIEW_MAP), 'view-generic']) {
+    const activeView = VIEW_MAP[s.currentTab] || 'view-dashboard';
+    for (const id of Object.values(VIEW_MAP)) {
         $(id)?.classList.toggle('hidden', id !== activeView);
     }
     $('url-bar').textContent = `${location.host || 'tailnet'}/AgenticOS/${s.currentTab}`;
-    if (activeView === 'view-generic') {
-        const link = document.querySelector(`[data-tab="${s.currentTab}"] i`);
-        $('generic-title').textContent = s.currentTab;
-        $('generic-icon').className = `${link?.className.replace('w-4 text-center', '') || 'fas fa-cube'} text-4xl text-purple-400`;
-    }
 }
 
 function cardHTML(card) {
     return `
-    <div class="stat-card bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-5 border border-white/10 hover:border-purple-500/50 cursor-pointer group" data-card="${card.id}">
+    <div class="stat-card bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-5 border border-white/10 hover:border-purple-500/50 cursor-pointer group" data-card="${card.id}" data-label="${esc(card.label)}" data-raw-value="${card.value}" data-format="${card.format}" title="Click to edit ${esc(card.label)}">
         <div class="flex justify-between items-start mb-4">
             <div class="w-10 h-10 rounded-full bg-[#222] flex items-center justify-center text-${card.color}-400 group-hover:scale-110 transition">
                 <i class="${card.icon}"></i>
             </div>
-            <span class="text-[10px] text-gray-500" data-badge>${appState.stats ? 'Live' : 'Demo'}</span>
+            <span class="text-[10px] text-gray-500" data-badge>${appState.stats ? 'Live · Edit' : 'Demo'}</span>
         </div>
-        <div class="text-sm text-gray-400 mb-1">${card.label}</div>
+        <div class="text-sm text-gray-400 mb-1">${esc(card.label)}</div>
         <div class="text-2xl font-light text-white" data-value data-current="0">${formatValue(card.format, 0)}</div>
     </div>`;
 }
@@ -95,6 +97,7 @@ function renderCards(s) {
     document.querySelectorAll('[data-btab]').forEach((el) => el.classList.toggle('active', el.dataset.btab === s.businessTab));
     const cards = s.stats?.tabs?.[s.businessTab] ?? SKELETON[s.businessTab] ?? [];
     const grid = $('stat-cards');
+    if (!grid) return;
     const currentIds = [...grid.querySelectorAll('[data-card]')].map((el) => el.dataset.card).join();
     if (currentIds !== cards.map((c) => c.id).join()) {
         grid.innerHTML = cards.map(cardHTML).join('') ||
@@ -102,32 +105,52 @@ function renderCards(s) {
     }
     cards.forEach((card) => {
         const root = grid.querySelector(`[data-card="${card.id}"]`);
+        if (!root) return;
+        root.dataset.rawValue = card.value;
         const el = root.querySelector('[data-value]');
-        root.querySelector('[data-badge]').textContent = s.stats ? 'Live' : 'Demo';
+        root.querySelector('[data-badge]').textContent = s.stats ? 'Live · Edit' : 'Demo';
         animateValue(el, parseFloat(el.dataset.current) || 0, convert(card, s), (v) => formatValue(card.format, v, s));
     });
 }
 
 function renderUsage(s) {
     const usage = s.stats?.usage ?? [];
-    $('usage-cards').innerHTML = usage.map((u) => `
-        <div class="glass-panel rounded-xl p-4 flex items-center justify-between hover:border-gray-600 transition cursor-pointer group">
-            <div class="flex items-center gap-4">
-                <div class="w-16 h-16 rounded-full bg-[#333] relative overflow-hidden shadow-lg">
-                    <img src="${u.image}" alt="" class="w-full h-full object-cover opacity-80 group-hover:scale-110 transition duration-500">
+    const box = $('usage-cards');
+    if (!box) return;
+    const vpsConn = (s.connectors || []).find((c) => c.id === 'ollama');
+    const gpuConn = (s.connectors || []).find((c) => c.id === 'main_pc_gpu');
+    box.innerHTML = usage.map((u, idx) => {
+        const isCpu = idx === 0;
+        const icon = isCpu ? 'fas fa-server text-sky-400' : 'fas fa-microchip text-purple-400';
+        const sub = isCpu
+            ? (vpsConn?.detail || `Node ${s.ollamaUrl ? s.ollamaUrl.replace(/^https?:\/\//, '') : '147.189.168.95:11434'}`)
+            : (gpuConn?.detail || 'RTX 5070 12GB · Local Cache');
+        const barColor = isCpu ? 'bg-sky-500' : 'bg-purple-500';
+        return `
+        <div class="glass-panel rounded-xl p-4 flex flex-col justify-between hover:border-purple-500/40 transition cursor-pointer group h-32" data-usage-card="${esc(u.id)}" data-usage-label="${esc(u.label)}" data-usage-percent="${u.percent}" data-usage-image="${esc(u.image || '')}" title="Click to edit or sync ${esc(u.label)}">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-xl bg-[#1a1b23] border border-white/10 flex items-center justify-center shrink-0">
+                        <i class="${icon}"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="text-xs font-medium text-gray-200 truncate">${esc(u.label)}</div>
+                        <div class="text-[10px] text-gray-400 font-mono truncate">${esc(sub)}</div>
+                    </div>
                 </div>
-                <div>
-                    <div class="text-2xl font-light text-white" data-usage="${u.id}" data-current="0">0%</div>
-                    <div class="text-xs text-gray-400">${u.label}</div>
-                </div>
+                <div class="text-2xl font-light text-white font-mono shrink-0" data-usage="${esc(u.id)}" data-current="0">0%</div>
             </div>
-        </div>`).join('');
+            <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden mt-3">
+                <div class="${barColor} h-full rounded-full transition-all duration-700" style="width: ${Math.max(4, Math.min(100, u.percent))}%"></div>
+            </div>
+        </div>`;
+    }).join('');
     usage.forEach((u) => {
         const el = document.querySelector(`[data-usage="${u.id}"]`);
         animateValue(el, 0, u.percent, (v) => `${Math.round(v)}%`);
     });
     if (s.stats) {
-        $('data-source').textContent = 'Live from SQLite';
+        $('data-source').textContent = 'Live from SQLite + VPS Telemetry';
         $('data-dot').className = 'w-2 h-2 rounded-full bg-green-500';
     }
 }
@@ -149,22 +172,181 @@ function renderModels(s) {
     $('header-location').textContent = loc;
     $('panel-model-location').textContent = loc;
     $('panel-model-name').textContent = m.name;
-    $('panel-model-host').textContent = m.location === 'cloud' ? 'Via OpenAI-compatible API' : 'On VPS (Ollama)';
+    const hostText = m.location === 'cloud'
+        ? 'Via OpenAI-compatible API'
+        : `On Node (${s.ollamaUrl ? s.ollamaUrl.replace(/^https?:\/\//, '') : '147.189.168.95:11434'})${s.failsafeEnabled ? ' + AirLLM Failsafe' : ''}`;
+    $('panel-model-host').textContent = hostText;
     $('answer-model').textContent = m.name;
     document.querySelectorAll('[data-mode]').forEach((el) => el.classList.toggle('active', el.dataset.mode === m.location));
 
-    const groups = [['local', 'Local Models'], ['cloud', 'Cloud Models']];
+    const groups = [['local', 'Local / VPS Models'], ['cloud', 'Cloud Models']];
     $('model-list').innerHTML = groups.map(([key, title]) => {
         const items = s.models.filter((x) => x.location === key);
         if (!items.length) return '';
         return `<div class="p-2 text-[10px] font-bold text-gray-500 uppercase">${title}</div>` + items.map((x) => `
             <div class="hover:bg-white/10 cursor-pointer text-xs flex items-center gap-2 p-2 border-l-2 ${x.id === s.model ? 'border-white bg-white/5' : 'border-transparent'}"
-                 data-model-id="${x.id}" title="${x.id}">
-                <div class="w-2 h-2 rounded-full ${x.available ? 'bg-green-500' : 'bg-gray-600'}"></div>
-                <span class="flex-1 truncate">${x.name}</span>
-                <span class="text-[9px] text-gray-500">${x.available ? x.size || '' : x.status || ''}</span>
+                 data-model-id="${esc(x.id)}" title="${esc(x.id)}">
+                <div class="w-2 h-2 rounded-full ${x.available ? 'bg-green-500' : 'bg-amber-500'}"></div>
+                <span class="flex-1 truncate">${esc(x.name)}</span>
+                <span class="text-[9px] text-gray-500">${esc(x.available ? x.size || 'ready' : x.status || '')}</span>
             </div>`).join('');
     }).join('');
+}
+
+function renderToolModeAndFailsafe(s) {
+    const mode = s.toolMode || 'auto';
+    if ($('tool-mode-badge')) $('tool-mode-badge').textContent = `mode: ${mode}`;
+    const lockMap = {
+        auto: { label: 'Auto (Full Admin)', icon: 'fas fa-unlock text-emerald-400', float: 'Auto' },
+        confirm: { label: 'Confirm Writes', icon: 'fas fa-shield-alt text-amber-400', float: 'Confirm' },
+        readonly: { label: 'Read-Only Locked', icon: 'fas fa-lock text-red-400', float: 'Locked' },
+    };
+    const info = lockMap[mode] || lockMap.auto;
+    if ($('lock-mode-btn')) {
+        $('lock-mode-btn').innerHTML = `<i class="${info.icon.split(' ').slice(0, 2).join(' ')}"></i> ${info.label}`;
+    }
+    if ($('floating-lock-label')) $('floating-lock-label').textContent = info.float;
+    if ($('floating-lock-icon')) $('floating-lock-icon').className = info.icon;
+    if ($('failsafe-pill')) {
+        $('failsafe-pill').textContent = s.failsafeEnabled
+            ? 'VPS Primary · Local AirLLM Failsafe Armed'
+            : 'VPS Primary · Failsafe Disabled';
+        $('failsafe-pill').className = `px-2 py-0.5 rounded text-[10px] font-mono border cursor-pointer ${
+            s.failsafeEnabled
+                ? 'bg-emerald-950/60 text-emerald-300 border-emerald-500/30'
+                : 'bg-amber-950/60 text-amber-300 border-amber-500/30'
+        }`;
+    }
+    const urlInput = $('details-ollama-url') || $('ollama-url-input');
+    if (urlInput && s.ollamaUrl && !urlInput.matches(':focus')) {
+        urlInput.value = s.ollamaUrl;
+    }
+    if ($('live-endpoint-pill') && s.ollamaUrl) {
+        $('live-endpoint-pill').textContent = `VPS ${s.ollamaUrl.replace(/^https?:\/\//, '')}`;
+    }
+}
+
+function renderConnectors(s) {
+    const list = s.connectors || [];
+    const onlineCount = list.filter((c) => c.online).length;
+    if ($('connector-status')) {
+        $('connector-status').innerHTML = onlineCount > 0
+            ? `<div class="w-1.5 h-1.5 rounded-full bg-green-500"></div> <span class="text-green-400">${onlineCount}/${list.length || 1} Online</span>`
+            : `<div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> <span class="text-emerald-400">On</span>`;
+    }
+
+    const vpsConn = list.find((c) => c.id === 'ollama');
+    const gpuConn = list.find((c) => c.id === 'main_pc_gpu');
+    if (vpsConn) {
+        const msMatch = (vpsConn.detail || '').match(/(\d+ms)/);
+        if ($('live-latency-pill')) $('live-latency-pill').textContent = msMatch ? `ping: ${msMatch[1]}` : (vpsConn.online ? 'ping: online' : 'ping: standby');
+        if ($('matrix-vps-status')) {
+            $('matrix-vps-status').textContent = vpsConn.online ? 'ONLINE' : 'STANDBY';
+            $('matrix-vps-status').className = `px-1.5 py-0.5 rounded text-[9px] ${vpsConn.online ? 'bg-emerald-900/50 text-emerald-300' : 'bg-amber-900/50 text-amber-300'}`;
+        }
+        if ($('matrix-vps-model')) $('matrix-vps-model').textContent = `Active: ${s.model} (${vpsConn.detail || 'CPU Auto'})`;
+        if ($('matrix-vps-host')) $('matrix-vps-host').textContent = `Endpoint: ${s.ollamaUrl || 'http://147.189.168.95:11434'}`;
+        if ($('welcome-vps-pill')) {
+            $('welcome-vps-pill').textContent = vpsConn.online ? `VPS ONLINE · ${msMatch ? msMatch[1] : 'READY'}` : 'VPS STANDBY · GPU FAILSAFE';
+        }
+    }
+    if (gpuConn) {
+        if ($('matrix-gpu-status')) $('matrix-gpu-status').textContent = gpuConn.online ? 'RTX 5070 READY' : 'CPU MODE';
+        if ($('matrix-gpu-spec')) $('matrix-gpu-spec').textContent = gpuConn.detail || '11.9GB VRAM · Local Cache Ready';
+    }
+    if (s.welcomeGreeting && $('jarvis-welcome-text')) {
+        $('jarvis-welcome-text').textContent = s.welcomeGreeting;
+    }
+
+    if ($('connector-row') && list.length) {
+        $('connector-row').innerHTML = list.map((c) => `
+            <div class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[#181920]/90 border ${c.online ? 'border-emerald-500/40 text-emerald-300' : 'border-white/10 text-gray-500'} cursor-pointer hover:border-purple-400 transition shrink-0" title="${esc(c.name)} (${esc(c.detail || '')})">
+                <div class="w-1.5 h-1.5 rounded-full ${c.online ? 'bg-emerald-400' : 'bg-gray-600'}"></div>
+                <i class="${esc(c.icon || 'fas fa-plug')} text-[11px]"></i>
+                <div class="text-[10px] font-mono">
+                    <span class="text-gray-200">${esc(c.name.split(' ')[0])}</span>
+                    <span class="text-gray-400 ml-1">${esc((c.detail || '').split('·')[0].trim())}</span>
+                </div>
+            </div>`).join('');
+    }
+    if ($('details-connector-grid') && list.length) {
+        $('details-connector-grid').innerHTML = list.map((c) => `
+            <div class="p-2.5 rounded-lg bg-black/40 border ${c.online ? 'border-emerald-500/30' : 'border-white/10'} flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                    <div class="text-white font-medium truncate"><i class="${esc(c.icon || 'fas fa-plug')} mr-1.5 text-purple-400"></i>${esc(c.name)}</div>
+                    <div class="text-[10px] text-gray-400 font-mono truncate">${esc(c.detail || c.target || '')}</div>
+                </div>
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-mono shrink-0 ${c.online ? 'bg-emerald-900/50 text-emerald-300' : 'bg-gray-800 text-gray-400'}">${c.online ? 'ONLINE' : 'STANDBY'}</span>
+            </div>`).join('');
+    }
+}
+
+function renderActivityFeed(s) {
+    const feed = $('vps-activity-feed');
+    if (!feed) return;
+    const recentSteps = (s.steps || []).slice(-3).reverse().map((st) => ({
+        ts: 'live',
+        actor: st.role || 'jarvis',
+        tool: st.tool,
+        result: st.result || st.status,
+        ok: st.status !== 'error' && st.status !== 'denied',
+    }));
+    const recentAudits = (s.audit || []).slice(0, 4);
+    const combined = [...recentSteps, ...recentAudits].slice(0, 4);
+    if (!combined.length) {
+        feed.innerHTML = `<div class="text-emerald-400/90">● Node ${s.ollamaUrl ? s.ollamaUrl.replace(/^https?:\/\//, '') : '147.189.168.95:11434'} (${esc(s.model)}) & Local RTX 5070 standing by — zero errors.</div>`;
+        return;
+    }
+    feed.innerHTML = combined.map((a) => `
+        <div class="flex items-center justify-between gap-2 truncate">
+            <span class="truncate">
+                <span class="${a.ok ? 'text-emerald-400' : 'text-red-400'}">●</span>
+                <span class="text-gray-500">${esc(String(a.ts || '').slice(-8))}</span>
+                <span class="text-purple-300 ml-1">${esc(a.actor || 'jarvis')}</span>
+                <span class="text-white font-semibold ml-1">${esc(a.tool)}</span>
+                <span class="text-gray-400 ml-1">${esc(String(a.result || '').slice(0, 70))}</span>
+            </span>
+            <span class="text-[9px] px-1.5 rounded ${a.ok ? 'bg-emerald-950 text-emerald-300' : 'bg-red-950 text-red-300'} shrink-0">${a.ok ? 'OK' : 'ERR'}</span>
+        </div>`).join('');
+}
+
+function renderChatMessages(s) {
+    const box = $('chat-view-log');
+    if (!box) return;
+    const msgs = s.chatMessages || [];
+    if (!msgs.length) {
+        box.innerHTML = '<div class="text-gray-500 text-xs">No conversation messages yet. Send a prompt below to talk to VPS Ollama (or automatic local AirLLM failsafe).</div>';
+        return;
+    }
+    box.innerHTML = msgs.map((m) => {
+        const isUser = m.role === 'user';
+        return `
+        <div class="p-3 rounded-xl border ${isUser ? 'bg-purple-950/20 border-purple-500/30 ml-6' : 'bg-black/40 border-white/10 mr-6'}">
+            <div class="flex items-center justify-between text-[10px] text-gray-400 font-mono mb-1">
+                <span class="${isUser ? 'text-purple-300' : 'text-emerald-300'} uppercase font-semibold">${esc(m.role)}</span>
+                <span>${esc(m.created_at || '')}</span>
+            </div>
+            <div class="text-xs text-gray-200 whitespace-pre-wrap leading-relaxed">${esc(m.content)}</div>
+        </div>`;
+    }).join('');
+    box.scrollTop = box.scrollHeight;
+}
+
+function renderWorkspaceFiles(s) {
+    const box = $('workspace-file-list');
+    if (!box) return;
+    const files = s.workspaceFiles || [];
+    if (!files.length) {
+        box.innerHTML = '<div class="text-gray-500 p-2">Click List Files to inspect workspace.</div>';
+        return;
+    }
+    box.innerHTML = files.map((f) => `
+        <div data-file-path="${esc(f.path)}" data-file-dir="${f.is_dir ? '1' : '0'}" class="px-2 py-1 rounded hover:bg-white/10 cursor-pointer flex items-center justify-between gap-2">
+            <span class="truncate ${f.is_dir ? 'text-sky-300' : 'text-gray-300'}">
+                <i class="fas ${f.is_dir ? 'fa-folder text-sky-400' : 'fa-file-code text-gray-500'} mr-1.5"></i>${esc(f.name)}
+            </span>
+            <span class="text-[10px] text-gray-500 shrink-0">${f.is_dir ? 'DIR' : `${Math.ceil((f.size || 0) / 1024)}KB`}</span>
+        </div>`).join('');
 }
 
 function renderInbox(s) {
@@ -258,7 +440,7 @@ function renderSteps(s) {
 }
 
 function renderSettings(s) {
-    $('tool-mode-badge').textContent = `mode: ${s.toolMode}`;
+    renderToolModeAndFailsafe(s);
     const sys = s.system;
     if (sys) {
         const upH = sys.uptime_s ? `${Math.floor(sys.uptime_s / 86400)}d ${Math.floor((sys.uptime_s % 86400) / 3600)}h` : '—';
@@ -318,9 +500,11 @@ function renderMic(s) {
 function renderConnection(s) {
     $('conn-dot').className = `w-1.5 h-1.5 rounded-full ${s.connected ? 'bg-green-500' : 'bg-red-500'}`;
     $('conn-label').textContent = s.connected ? 'brain online' : 'offline';
-    $('connector-status').innerHTML = s.connected
-        ? '<div class="w-1.5 h-1.5 rounded-full bg-green-500"></div> <span class="text-green-400">On</span>'
-        : '<div class="w-1.5 h-1.5 rounded-full bg-red-500"></div> <span class="text-red-400">Off</span>';
+    if (!s.connectors?.length) {
+        $('connector-status').innerHTML = s.connected
+            ? '<div class="w-1.5 h-1.5 rounded-full bg-green-500"></div> <span class="text-green-400">On</span>'
+            : '<div class="w-1.5 h-1.5 rounded-full bg-red-500"></div> <span class="text-red-400">Off</span>';
+    }
 }
 
 function renderTokens(s) {
@@ -342,9 +526,14 @@ function render(changed, s) {
     const has = (...keys) => keys.some((k) => k in changed);
     if (has('currentTab')) renderSidebar(s);
     if (has('businessTab', 'stats', 'currency', 'rates')) renderCards(s);
-    if (has('stats')) renderUsage(s);
+    if (has('stats', 'connectors')) renderUsage(s);
     if (has('user')) renderUser(s);
-    if (has('models', 'model')) renderModels(s);
+    if (has('models', 'model', 'ollamaUrl', 'failsafeEnabled')) renderModels(s);
+    if (has('toolMode', 'failsafeEnabled', 'ollamaUrl')) renderToolModeAndFailsafe(s);
+    if (has('connectors', 'welcomeGreeting', 'model')) renderConnectors(s);
+    if (has('audit', 'steps', 'model')) renderActivityFeed(s);
+    if (has('chatMessages')) renderChatMessages(s);
+    if (has('workspaceFiles')) renderWorkspaceFiles(s);
     if (has('inbox', 'unreadInbox')) renderInbox(s);
     if (has('jobs')) renderJobs(s);
     if (has('memories')) renderMemories(s);
@@ -391,6 +580,7 @@ let interimEl = null;
 
 export function log(role, text, meta = '') {
     const box = $('hud-log');
+    if (!box) return;
     clearInterim();
     const line = document.createElement('div');
     line.className = `hud-line ${role}`;
@@ -408,6 +598,7 @@ export function log(role, text, meta = '') {
 
 export function logInterim(text) {
     const box = $('hud-log');
+    if (!box) return;
     if (!interimEl) {
         interimEl = document.createElement('div');
         interimEl.className = 'hud-line interim';

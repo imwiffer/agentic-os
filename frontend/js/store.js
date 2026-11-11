@@ -15,19 +15,28 @@ export const appState = {
     rates: { USD: 1 },
     currencies: ['USD'],
     models: [],
-    model: null,
+    model: 'qwen2.5:0.5b',
+    ollamaOnline: false,
+    ollamaUrl: 'http://147.189.168.95:11434',
+    failsafeEnabled: true,
+    hardware: null,
+    welcomeGreeting: '',
     role: 'jarvis',            // active agent persona
     roles: [],
-    toolMode: 'confirm',
+    toolMode: 'auto',
     stats: null,
     user: null,
     system: null,              // VPS health snapshot
+    connectors: [],            // live connector telemetry
     inbox: [],
     unreadInbox: 0,
     memories: [],
     jobs: [],
     audit: [],
     steps: [],                 // live tool execution trace
+    chatMessages: [],          // persistent chat tab history
+    consoleCwd: '',
+    workspaceFiles: [],
     approvalRequest: null,     // { id, tool, args, reason }
     tokens: 0,
     engine: null,              // last reasoning engine used: llm | rules
@@ -55,6 +64,5 @@ export function updateUI(newState) {
     return appState;
 }
 
-// Handy for debugging from DevTools: appState, updateUI({currentTab: 'Inbox'})
 window.appState = appState;
 window.updateUI = updateUI;

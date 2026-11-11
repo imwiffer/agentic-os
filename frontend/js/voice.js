@@ -189,8 +189,32 @@ export class VoiceEngine {
 // ----- Text-to-speech -----
 const PREFERRED_VOICES = ['Google UK English Male', 'Microsoft Ryan', 'Microsoft George', 'Daniel', 'Arthur', 'Microsoft Guy'];
 
+export function cleanSpokenText(text) {
+    if (!text) return '';
+    let s = String(text);
+    // Strip code blocks and inline code
+    s = s.replace(/```[\s\S]*?```/g, ' ');
+    s = s.replace(/`([^`]+)`/g, '$1');
+    // Strip markdown links, headers, bullets
+    s = s.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+    s = s.replace(/[*_#~>|]/g, ' ');
+    // Strip URLs and JSON
+    s = s.replace(/https?:\/\/\S+/g, ' ');
+    s = s.replace(/\{[^}]+\}/g, ' ');
+    s = s.replace(/\s+/g, ' ').trim();
+    // Grab only the first 1-2 punchy sentences, max 140 chars
+    const sentences = s.match(/[^.!?]+[.!?]+/g);
+    let candidate = sentences && sentences.length > 0 ? sentences.slice(0, 2).join(' ').trim() : s;
+    if (candidate.length > 140) {
+        candidate = candidate.slice(0, 137).trim() + '…';
+    }
+    return candidate || s.slice(0, 100);
+}
+
 export const speaker = {
     voice: null,
+    muted: localStorage.getItem('jarvis_muted') === 'true',
+    currentAudio: null,
 
     pickVoice() {
         const voices = window.speechSynthesis?.getVoices() ?? [];
@@ -200,23 +224,79 @@ export const speaker = {
             voices.find((v) => v.lang.startsWith('en')) || null;
     },
 
-    speak(text, { onstart, onend } = {}) {
-        if (!('speechSynthesis' in window) || !text) { onend?.(); return; }
+    stop() {
+        if (this.currentAudio) {
+            try {
+                this.currentAudio.pause();
+                this.currentAudio.currentTime = 0;
+            } catch {}
+            this.currentAudio = null;
+        }
+        if ('speechSynthesis' in window) {
+            try { speechSynthesis.cancel(); } catch {}
+        }
+    },
+
+    toggleMute() {
+        this.muted = !this.muted;
+        try { localStorage.setItem('jarvis_muted', String(this.muted)); } catch {}
+        if (this.muted) {
+            this.stop();
+        }
+        return this.muted;
+    },
+
+    async speak(text, { onstart, onend } = {}) {
+        if (this.muted) {
+            onend?.();
+            return;
+        }
+        const spoken = cleanSpokenText(text);
+        if (!spoken) { onend?.(); return; }
+
+        this.stop();
+
+        // 1. Try high-fidelity Fish Audio Neural TTS first
+        try {
+            const res = await fetch('/api/fish_audio/speak', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: spoken }),
+            });
+            if (res.ok) {
+                if (this.muted) { onend?.(); return; }
+                const blob = await res.blob();
+                this.playBlob(blob, { onstart, onend });
+                return;
+            }
+        } catch (e) {
+            console.debug('Fish Audio fallback to browser speech:', e);
+        }
+
+        // 2. Fallback to Web Speech Synthesis
+        if (!('speechSynthesis' in window) || this.muted) { onend?.(); return; }
         if (!this.voice) this.pickVoice();
         speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text);
+        const u = new SpeechSynthesisUtterance(spoken);
         if (this.voice) u.voice = this.voice;
-        u.rate = 1.03;
-        u.pitch = 0.85;
+        u.rate = 1.05;
+        u.pitch = 0.88;
         u.onstart = () => onstart?.();
         u.onend = u.onerror = () => onend?.();
         speechSynthesis.speak(u);
     },
 
     playBlob(blob, { onstart, onend } = {}) {
+        if (this.muted) { onend?.(); return; }
+        this.stop();
         const url = URL.createObjectURL(blob);
         const audio = new Audio(url);
-        const done = () => { URL.revokeObjectURL(url); onend?.(); };
+        this.currentAudio = audio;
+        const done = () => {
+            if (this.currentAudio === audio) this.currentAudio = null;
+            URL.revokeObjectURL(url);
+            onend?.();
+        };
         audio.onplay = () => onstart?.();
         audio.onended = done;
         audio.onerror = done;

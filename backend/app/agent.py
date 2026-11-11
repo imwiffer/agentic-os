@@ -179,7 +179,7 @@ def match_model(query: str, models: list[dict]) -> dict | None:
 
 async def _ollama_tags() -> list[str] | None:
     try:
-        async with httpx.AsyncClient(timeout=1.5) as client:
+        async with httpx.AsyncClient(timeout=2.5) as client:
             r = await client.get(f"{config.OLLAMA_URL}/api/tags")
             r.raise_for_status()
             return [m["name"] for m in r.json().get("models", [])]
@@ -197,9 +197,12 @@ async def list_models() -> dict:
     cloud_ready = bool(config.OPENAI_API_KEY)
     known = {m["id"] for m in models}
     for m in models:
-        if m["location"] == "local":
+        if m.get("provider") == "airllm":
+            m["available"] = True
+            m["status"] = "failsafe ready"
+        elif m["location"] == "local":
             m["available"] = bool(tags) and _tag_matches(m["id"], tags)
-            m["status"] = "ready" if m["available"] else ("not pulled" if tags is not None else "ollama offline")
+            m["status"] = "vps ready" if m["available"] else ("not pulled on VPS" if tags is not None else "vps offline (failsafe armed)")
         else:
             m["available"] = cloud_ready
             m["status"] = "ready" if cloud_ready else "no API key"
@@ -207,10 +210,14 @@ async def list_models() -> dict:
         base = tag.removesuffix(":latest")
         if tag not in known and base not in known:
             models.append({"id": tag, "name": base.replace(":", " ").title(), "provider": "ollama",
-                           "location": "local", "size": "", "available": True, "status": "ready",
+                           "location": "local", "size": "", "available": True, "status": "vps ready",
                            "discovered": True})
-    return {"models": models, "default": config.DEFAULT_MODEL,
-            "ollama_online": tags is not None, "cloud_ready": cloud_ready}
+    default_id = config.DEFAULT_MODEL
+    if tags and not any(_tag_matches(default_id, tags) for _ in [1]):
+        default_id = tags[0]
+    return {"models": models, "default": default_id,
+            "ollama_online": tags is not None, "ollama_url": config.OLLAMA_URL,
+            "failsafe_enabled": config.FAILSAFE_ENABLED, "cloud_ready": cloud_ready}
 
 
 def resolve_model(model_id: str | None) -> dict:
