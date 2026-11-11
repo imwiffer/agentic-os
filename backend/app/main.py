@@ -24,6 +24,7 @@ import asyncio
 import json
 import logging
 import os
+import re
 import secrets
 import shutil
 import subprocess
@@ -839,6 +840,22 @@ app.include_router(api)
 
 # --- WebSocket --------------------------------------------------------------
 
+def _clean_spoken_text(s: str) -> str:
+    if not s:
+        return ""
+    s = re.sub(r"```[\s\S]*?```", " ", s)
+    s = re.sub(r"`[^`]+`", " ", s)
+    s = re.sub(r"[*_#~>|]", " ", s)
+    s = re.sub(r"https?://\S+", " ", s)
+    s = re.sub(r"\{[^}]+\}", " ", s)
+    s = re.sub(r"\s+", " ", s).strip()
+    sentences = re.findall(r"[^.!?]+[.!?]+", s)
+    candidate = " ".join(sentences[:2]).strip() if sentences else s
+    if len(candidate) > 140:
+        candidate = candidate[:137].rstrip() + "…"
+    return candidate or s[:100]
+
+
 async def _run_turn(ws: WebSocket, text: str, state: dict, conv_id: str, actor: str,
                     approvals: dict[str, asyncio.Future]) -> None:
     if not auth.chat_limiter.allow(actor):
@@ -888,14 +905,18 @@ async def _run_turn(ws: WebSocket, text: str, state: dict, conv_id: str, actor: 
     })
 
     if tts.enabled:
-        await ws.send_json({"type": "audio_start", "mime": tts.mime})
-        try:
-            async for chunk in tts.stream(result.response):
-                await ws.send_bytes(chunk)
+        spoken_text = _clean_spoken_text(result.response)
+        if spoken_text:
+            await ws.send_json({"type": "audio_start", "mime": tts.mime})
+            try:
+                async for chunk in tts.stream(spoken_text):
+                    await ws.send_bytes(chunk)
+                await ws.send_json({"type": "audio_end"})
+            except Exception as exc:
+                log.warning("TTS failed: %s", exc)
+                await ws.send_json({"type": "audio_end", "error": str(exc)})
+        else:
             await ws.send_json({"type": "audio_end"})
-        except Exception as exc:
-            log.warning("TTS failed: %s", exc)
-            await ws.send_json({"type": "audio_end", "error": str(exc)})
 
 
 async def jarvis_ws(ws: WebSocket) -> None:
