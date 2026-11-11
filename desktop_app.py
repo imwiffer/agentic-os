@@ -21,6 +21,7 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent
 BACKEND_DIR = ROOT_DIR / "backend"
+VANTA_IDE_DIR = Path(r"C:\Users\wiff\Documents\Opencode\Projects\vanta-ide")
 AIRLLM_DIR = Path(r"C:\Users\wiff\Documents\Opencode\Projects\airllm")
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
@@ -40,17 +41,27 @@ def start_gpu_bridge_if_needed() -> None:
     """Ensure the Main PC RTX GPU bridge (Vanta server on :7777) is running so the remote VPS and local OS can use the GPU."""
     if is_port_open("127.0.0.1", 7777):
         return
-    airllm_py = AIRLLM_DIR / ".venv" / "Scripts" / "python.exe"
-    server_script = AIRLLM_DIR / "ide" / "server.py"
-    if airllm_py.exists() and server_script.exists():
-        creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-        subprocess.Popen(
-            [str(airllm_py), str(server_script), "--host", "0.0.0.0", "--port", "7777"],
-            cwd=str(AIRLLM_DIR),
-            creationflags=creationflags,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+    python_candidates = [
+        VANTA_IDE_DIR / ".venv" / "Scripts" / "python.exe",
+        AIRLLM_DIR / ".venv" / "Scripts" / "python.exe",
+        Path(sys.executable),
+    ]
+    server_candidates = [
+        (VANTA_IDE_DIR / "server.py", VANTA_IDE_DIR),
+        (AIRLLM_DIR / "ide" / "server.py", AIRLLM_DIR),
+    ]
+    py_exec = next((p for p in python_candidates if p.exists()), None)
+    for server_script, work_dir in server_candidates:
+        if py_exec and server_script.exists():
+            creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+            subprocess.Popen(
+                [str(py_exec), str(server_script), "--host", "0.0.0.0", "--port", "7777"],
+                cwd=str(work_dir),
+                creationflags=creationflags,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            break
 
 
 def start_backend_thread() -> None:
