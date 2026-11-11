@@ -100,5 +100,14 @@ Open your browser to `http://127.0.0.1:8000`.
 
 ---
 
+## Recent Progress & Architecture Updates
+
+* **Standalone IDE Decoupling:** Vanta IDE has been fully separated into its own independent repository at [imwiffer/vanta-ide](https://github.com/imwiffer/vanta-ide). Agentic OS now interfaces with it cleanly as an external GPU/runtime bridge while maintaining zero internal path tangling.
+* **Resilient GPU Bridge (`desktop_app.py`):** The local RTX 5070 GPU bridge (`:7777`) auto-detects and prioritizes the standalone Vanta IDE environment before falling back to legacy paths, guaranteeing non-blocking background initialization.
+* **Automated VPS Deployment (`deploy/setup-vps-ollama.cmd`):** Added complete setup script for remote Windows/Ubuntu VPS nodes, configuring persistent scheduled services, Tailscale firewall access rules (`100.64.0.0/10`), and automated hardware detection to pull optimal models (`qwen2.5-coder:7b` for GPU or `qwen2.5:0.5b` for CPU).
+* **Multi-Node Telemetry:** Enhanced health probes across both remote VPS (`147.189.168.95:11434`) and local GPU bridge with dynamic fallback routing.
+
+---
+
 ## License
 Released under the [MIT License](./LICENSE).
